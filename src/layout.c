@@ -33,7 +33,7 @@ TimelyLayout layout_compute(int width, int height) {
   L.cal_gap    = CAL_GAP;
   L.cal_left   = CAL_LEFT;
   L.cal_cell_w = (width - 2 * CAL_LEFT) / CAL_COLS;
-  L.cal_cell_h = L.slot_bot.h / 3;
+  L.cal_cell_h = L.slot_bot.h / 4; // header row + 3 week rows
 
   return L;
 }
