@@ -37,3 +37,7 @@ TimelyLayout layout_compute(int width, int height) {
 
   return L;
 }
+
+static TimelyLayout s_current;
+void layout_store(TimelyLayout l) { s_current = l; }
+TimelyLayout layout_get(void) { return s_current; }

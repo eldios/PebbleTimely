@@ -21,3 +21,8 @@ typedef struct {
 
 // Compute the layout for a screen of width x height pixels.
 TimelyLayout layout_compute(int width, int height);
+
+// The most recently computed layout (set by the view at window_load); read by
+// components that render proportionally (calendar, etc.).
+void layout_store(TimelyLayout l);
+TimelyLayout layout_get(void);

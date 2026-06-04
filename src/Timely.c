@@ -4,9 +4,11 @@
 #include "timefmt.h"
 #include "layout.h"
 #include "calendar.h"
+#include "calendar_view.h"
 #include "vibes.h"
 #include "ui.h"
 #include "theme.h"
+#include "splash.h"
 #define DEBUGLOG 0
 #define TRANSLOG 0
 #define CONFIG_VERSION "2.6"
@@ -31,16 +33,14 @@ static TextLayer *time_layer;
 static TextLayer *week_layer;
 static TextLayer *ampm_layer;
 static TextLayer *day_layer;
-static Layer *calendar_layer;
-static Layer *splash_layer;
 static Layer *statusbar;
 static Layer *slot_status;
 static Layer *slot_top;
 static Layer *slot_bot;
 static GFont unifont_16;
 static GFont unifont_16_bold;
-static GFont cal_normal;
-static GFont cal_bold;
+GFont cal_normal;
+GFont cal_bold;
 GFont climacons;
 
 static BitmapLayer *bmp_connection_layer;
@@ -229,6 +229,7 @@ static void compute_layout(int w, int h) {
   REL_CLOCK_SUBTEXT_TOP = L.subtext_top;
   CAL_WIDTH = L.cal_cell_w;
   CAL_HEIGHT = L.cal_cell_h;
+  layout_store(L);
 }
 
 #define SLOT_ID_CLOCK_1  0
@@ -279,109 +280,9 @@ struct tm *get_time() {
 // back to the classic white-on-black inversion (identical to setInvColors).
 
 
-void splash_layer_update_callback(Layer *me, GContext* ctx) {
-    (void)me; // 144x72
-    setColors(ctx);
-    graphics_draw_text(ctx, "Timely", fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD), GRect(0,0,144,36), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL); 
-    graphics_draw_text(ctx, CONFIG_VERSION, fonts_get_system_font(FONT_KEY_GOTHIC_28), GRect(0,32,144,36), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL); 
-}
 
-void calendar_layer_update_callback(Layer *me, GContext* ctx) {
-    (void)me;
 
-    CalGrid grid = calendar_build(currentTime->tm_year + 1900,
-                                  currentTime->tm_mon,
-                                  currentTime->tm_mday,
-                                  currentTime->tm_wday,
-                                  settings_get()->dayOfWeekOffset,
-                                  adv_settings_get()->week_pattern);
-    int *calendar = grid.days;
-    int specialDay = grid.special_col;
-    if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Calendar - sCol: %d, sRow: %d", grid.special_col, grid.special_row); }
 
-// ---------------------------
-// Now that we've calculated which days go where, we'll move on to the display logic.
-// ---------------------------
-
-    #define CAL_DAYS   7   // number of columns (days of the week)
-    #define CAL_GAP    1   // gap around calendar
-    #define CAL_LEFT   2   // left side of calendar
-
-    int weeks  =  3;  // always display 3 weeks: # previous, current, # next
-        
-    GFont current = cal_normal;
-    int font_vert_offset = 0;
-    if (strcmp(lang_gen_get()->language,"RU") == 0 ) { font_vert_offset = -2; }
-
-    // generate a light background for the calendar grid
-    if (settings_get()->grid) {
-      setInvColors(ctx);
-      graphics_fill_rect(ctx, GRect (CAL_LEFT + CAL_GAP, CAL_HEIGHT - CAL_GAP, DEVICE_WIDTH - 2 * (CAL_LEFT + CAL_GAP), CAL_HEIGHT * weeks), 0, GCornerNone);
-      setColors(ctx);
-    }
-    for (int col = 0; col < CAL_DAYS; col++) {
-
-      // Adjust labels by specified offset
-      int weekday = col + settings_get()->dayOfWeekOffset;
-      if (weekday > 6) { weekday -= 7; }
-
-      if (col == specialDay) {
-        current = cal_bold;
-        font_vert_offset = -3;
-        if (strcmp(lang_gen_get()->language,"RU") == 0 ) { font_vert_offset = -2; }
-      }
-      // draw the cell background
-    //  graphics_fill_rect(ctx, GRect (CAL_WIDTH * col + CAL_LEFT + CAL_GAP, 0, CAL_WIDTH - CAL_GAP, CAL_HEIGHT - CAL_GAP), 0, GCornerNone);
-
-      // draw the cell text
-      graphics_draw_text(ctx, lang_gen_get()->abbrDaysOfWeek[weekday], current, GRect(CAL_WIDTH * col + CAL_LEFT + CAL_GAP, CAL_GAP + font_vert_offset, CAL_WIDTH, CAL_HEIGHT), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL); 
-      if (col == specialDay) {
-        if (strcmp(lang_gen_get()->language,"RU") == 0 ) {
-          // we don't actually have a bold font for this, so we'll use font double-striking to simulate bold
-          graphics_draw_text(ctx, lang_gen_get()->abbrDaysOfWeek[weekday], current, GRect(CAL_WIDTH * col + CAL_LEFT + CAL_GAP + 1, CAL_GAP + font_vert_offset, CAL_WIDTH, CAL_HEIGHT), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL); 
-        }
-        current = cal_normal;
-        font_vert_offset = 0;
-        if (strcmp(lang_gen_get()->language,"RU") == 0 ) { font_vert_offset = -2; }
-      }
-    }
-
-    GFont normal = fonts_get_system_font(FONT_KEY_GOTHIC_14); // fh = 16
-    GFont bold   = fonts_get_system_font(FONT_KEY_GOTHIC_18_BOLD); // fh = 22
-    current = normal;
-    font_vert_offset = 0;
-
-    // draw the individual calendar rows/columns
-    int week = 0;
-    int specialRow = grid.special_row;
-    
-    for (int row = 1; row <= 3; row++) {
-      week++;
-      for (int col = 0; col < CAL_DAYS; col++) {
-        if ( row == specialRow && col == specialDay) {
-          if (settings_get()->day_invert) {
-            setTodayColors(ctx);
-          }
-          current = bold;
-          font_vert_offset = -3;
-        }
-
-        // draw the cell background
-        graphics_fill_rect(ctx, GRect (CAL_WIDTH * col + CAL_LEFT + CAL_GAP, CAL_HEIGHT * week, CAL_WIDTH - CAL_GAP, CAL_HEIGHT - CAL_GAP), 0, GCornerNone);
-
-        // draw the cell text
-        char date_text[3];
-        snprintf(date_text, sizeof(date_text), "%d", calendar[col + 7 * (row - 1)]);
-        graphics_draw_text(ctx, date_text, current, GRect(CAL_WIDTH * col + CAL_LEFT, CAL_HEIGHT * week - CAL_GAP + font_vert_offset, CAL_WIDTH, CAL_HEIGHT), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL); 
-
-        if ( row == specialRow && col == specialDay) {
-          setColors(ctx);
-          current = normal;
-          font_vert_offset = 0;
-        }
-      }
-    }
-}
 
 void update_date_text() {
 
@@ -997,11 +898,11 @@ void set_status_charging_icon() {
 
 static void toggle_slot_bottom(void *data) {
   watch_version_send(NULL); // no guarantee the JS is there to receive me...
-  static Layer* last = NULL;
-  Layer* which = (Layer*)data;
-  if (last != NULL) { layer_set_hidden(last, true); } // hide visible layer 
-  last = which; // we're about to show a layer, mark it as the visible layer 
-  if (last != NULL) { layer_set_hidden(last, false); } // show new visible layer 
+  static int shown = -1; // 0 = splash, 1 = calendar
+  int which = (int)(intptr_t)data;
+  if (shown == 0) { splash_set_hidden(true); } else if (shown == 1) { calendar_set_hidden(true); }
+  shown = which;
+  if (shown == 0) { splash_set_hidden(false); } else if (shown == 1) { calendar_set_hidden(false); }
   bottom_toggle = NULL;
 }
 
@@ -1220,17 +1121,12 @@ static void window_load(Window *window) {
   layer_set_update_proc(datetime_layer, datetime_layer_update_callback);
   layer_add_child(slot_top, datetime_layer);
 
-  calendar_layer = layer_create(slot_bot_bounds);
-  layer_set_update_proc(calendar_layer, calendar_layer_update_callback);
-  layer_add_child(slot_bot, calendar_layer);
-  layer_set_hidden(calendar_layer, true);
+  calendar_create(slot_bot, slot_bot_bounds);
 
-  splash_layer = layer_create(slot_bot_bounds);
-  layer_set_update_proc(splash_layer, splash_layer_update_callback);
-  layer_add_child(slot_bot, splash_layer);
+  splash_create(slot_bot, slot_bot_bounds);
 
-  toggle_slot_bottom((void*)splash_layer);  // show @ start...
-  bottom_toggle = app_timer_register(2000, &toggle_slot_bottom, (void*)calendar_layer); // queue calendar to reappear in 2 seconds
+  toggle_slot_bottom((void*)(intptr_t)0);  // show @ start...
+  bottom_toggle = app_timer_register(2000, &toggle_slot_bottom, (void*)(intptr_t)1); // queue calendar to reappear in 2 seconds
 
   date_layer = text_layer_create( GRect(REL_CLOCK_DATE_LEFT, REL_CLOCK_DATE_TOP, REL_CLOCK_DATE_WIDTH, REL_CLOCK_DATE_HEIGHT) ); // see position_date_layer()
   set_layer_attr_sfont(date_layer, FONT_KEY_GOTHIC_24, GTextAlignmentCenter);
@@ -1318,8 +1214,8 @@ static void window_unload(Window *window) {
   layer_destroy(text_layer_get_layer(time_layer));
   layer_destroy(text_layer_get_layer(date_layer));
   weather_destroy();
-  layer_destroy(splash_layer);
-  layer_destroy(calendar_layer);
+  splash_destroy();
+  calendar_destroy();
   layer_destroy(datetime_layer);
   layer_destroy(battery_layer);
   // custom fonts are automatically unloaded at exit - http://forums.getpebble.com/discussion/comment/35808/#Comment_35808
@@ -1389,7 +1285,7 @@ void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed)
 
   if (units_changed & DAY_UNIT) {
     layer_mark_dirty(datetime_layer);
-    layer_mark_dirty(calendar_layer);
+    calendar_mark_dirty();
   }
 
   // calendar gets redrawn every time because time_layer is changed and all layers are redrawn together.
@@ -1797,7 +1693,7 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     // PebbleKit JS - more information from phone
     // ==== Future improvements ====
     // Positioning - top, bottom, etc.
-  if (1) { layer_mark_dirty(calendar_layer); } // TODO
+  if (1) { calendar_mark_dirty(); } // TODO
   if (1) { layer_mark_dirty(datetime_layer); } // TODO
 }
 
