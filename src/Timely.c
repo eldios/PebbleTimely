@@ -135,6 +135,7 @@ static bool showing_statusbar = true;
 #define AK_REQUEST_WEATHER      106
 #define AK_WEATHER_TEMP         107
 #define AK_WEATHER_COND         108
+#define AK_WEATHER_CITY         109
 
 #define AK_TRANS_ABBR_SUNDAY    500
 #define AK_TRANS_ABBR_MONDAY    501
@@ -483,6 +484,11 @@ void update_seconds_text(TextLayer *which_layer) {
   text_layer_set_text(which_layer, seconds_text);
 }
 
+void update_location_text(TextLayer *which_layer) {
+  // weather provider's location name (truncated to the slot width)
+  text_layer_set_text(which_layer, weather_state()->city);
+}
+
 char * get_doy_text() {
   static char doy_text[] = "D000";
   strftime(doy_text, sizeof(doy_text), "D%j", currentTime);
@@ -540,6 +546,9 @@ void process_show_week() {
   case 6: // Show Seconds
     update_seconds_text(week_layer);
     break;
+  case 7: // Show Location
+    update_location_text(week_layer);
+    break;
   }
 }
 
@@ -567,6 +576,9 @@ void process_show_day() {
   case 6: // Show DoY/DLiY
     update_doy_dliy_text(day_layer);
     break;
+  case 7: // Show Location
+    update_location_text(day_layer);
+    break;
   }
 }
 
@@ -593,6 +605,9 @@ void process_show_ampm() {
     break;
   case 6: // Show Seconds
     update_seconds_text(ampm_layer);
+    break;
+  case 7: // Show Location
+    update_location_text(ampm_layer);
     break;
   }
 }
@@ -1393,6 +1408,8 @@ void in_weather_handler(DictionaryIterator *received, void *context) {
     if (appkey != NULL)     { weather_state()->current = appkey->value->int16; }
     appkey = dict_find(received, AK_WEATHER_COND);
     if (appkey != NULL)     { strncpy(weather_state()->condition, appkey->value->cstring, sizeof(weather_state()->condition)-1); }
+    appkey = dict_find(received, AK_WEATHER_CITY);
+    if (appkey != NULL)     { strncpy(weather_state()->city, appkey->value->cstring, sizeof(weather_state()->city)-1); }
     weather_mark_dirty();
     if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Weather received [%d/%d]: %d, %s", weather_state()->failures, weather_state()->requests, weather_state()->current, weather_state()->condition); }
     if (weather_state()->current == 999) {

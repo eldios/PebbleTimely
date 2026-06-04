@@ -7,6 +7,7 @@ typedef struct weather_data {
   char condition[2];  // weather condition (mapped to a single climacons glyph)
   int16_t requests;   // requests sent since last success
   int16_t failures;   // failed responses since last success
+  char city[24];      // location name from the weather provider (display only)
 } __attribute__((__packed__)) weather_data;
 
 weather_data *weather_state(void);

@@ -9,6 +9,7 @@ static weather_data s_weather = {
   .condition = {'h'},
   .requests  = 0,
   .failures  = 0,
+  .city      = "",
 };
 
 weather_data *weather_state(void) { return &s_weather; }

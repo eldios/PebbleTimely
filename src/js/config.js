@@ -59,11 +59,14 @@ module.exports = [
       { key: 'intl_fmt_date', label: 'Date format', type: 'select', def: 0,
         options: [['MMMM DD, YYYY', 0], ['DD.MM.YYYY', 1]] },
       { key: 'style_week', label: 'Below time, left', type: 'select', def: 0,
-        options: [['—', 0], ['Week', 1], ['Timezone', 2], ['AM/PM', 3]] },
+        options: [['—', 0], ['Week', 1], ['Timezone', 2], ['AM/PM', 3],
+                  ['Day of year', 4], ['Days left in year', 5], ['Seconds', 6], ['Location', 7]] },
       { key: 'style_day', label: 'Below time, middle', type: 'select', def: 0,
-        options: [['—', 0], ['Day', 1], ['Month', 2], ['Timezone', 3], ['Week', 4], ['AM/PM', 5]] },
+        options: [['—', 0], ['Day', 1], ['Month', 2], ['Timezone', 3], ['Week', 4], ['AM/PM', 5],
+                  ['Day of year / left', 6], ['Location', 7]] },
       { key: 'style_am_pm', label: 'Below time, right', type: 'select', def: 0,
-        options: [['—', 0], ['AM/PM', 1], ['Timezone', 2], ['Week', 3]] },
+        options: [['—', 0], ['AM/PM', 1], ['Timezone', 2], ['Week', 3],
+                  ['Day of year', 4], ['Days left in year', 5], ['Seconds', 6], ['Location', 7]] },
       { key: 'intl_fmt_week', label: 'Week numbering', type: 'select', def: 0,
         options: [['ISO 8601', 0], ['Sun 1st of W1', 1], ['Mon 1st of W1', 2]] }
     ]

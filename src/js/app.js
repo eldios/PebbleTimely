@@ -296,14 +296,15 @@ function getWeatherFromWoeid(woeid) {
   req.send(null);
 }
 
-function sendWeather(temp, cond_icon) {
+function sendWeather(temp, cond_icon, city) {
   if (isItNight() && cond_icon == CLIMACON['sun']) { cond_icon = getMoonIcon(); }
   if (cond_icon == CLIMACON['moon']) { cond_icon = getMoonIcon(); }
-  console.log('Sending Weather: ' + temp + '  ' + cond_icon);
+  console.log('Sending Weather: ' + temp + '  ' + cond_icon + '  ' + (city || ''));
   Pebble.sendAppMessage({
     message_type: 106,
     weather_temp: temp,
     weather_cond: cond_icon,
+    weather_city: city || '',
   });
 }
 
@@ -435,7 +436,7 @@ function fetchOWMWeather(latitude, longitude) {
             weather_temp_min: temp_min,
             weather_temp_max: temp_max,
 */
-          sendWeather(temp, cond_icon);
+          sendWeather(temp, cond_icon, city);
         } else {
           for(var i in dataObj) {
                 console.log('dO:' + i + ' --- ' + dataObj[i]);
