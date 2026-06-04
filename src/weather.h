@@ -17,4 +17,5 @@ void weather_create(Layer *parent, GRect frame);
 void weather_destroy(void);
 void weather_set_frame(GRect frame);
 void weather_set_hidden(bool hidden);
+void weather_set_compact(bool compact); // narrow screens: smaller glyph + temperature
 void weather_mark_dirty(void);

@@ -9,7 +9,6 @@
   "pebble": {
     "sdkVersion": "3",
     "targetPlatforms": [
-      "aplite",
       "basalt",
       "diorite",
       "emery",
@@ -86,6 +85,11 @@
         {
           "type": "font",
           "name": "FONT_CLIMACONS_32",
+          "file": "fonts/Climacons.ttf"
+        },
+        {
+          "type": "font",
+          "name": "FONT_CLIMACONS_28",
           "file": "fonts/Climacons.ttf"
         }
       ]

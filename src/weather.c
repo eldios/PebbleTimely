@@ -15,6 +15,9 @@ static weather_data s_weather = {
 weather_data *weather_state(void) { return &s_weather; }
 
 static Layer *s_weather_layer;
+static bool s_compact = false; // narrow screens (144px): smaller glyph + temperature
+
+void weather_set_compact(bool compact) { s_compact = compact; }
 
 static void weather_render(Layer *me, GContext *ctx) {
   (void)me;
@@ -29,8 +32,10 @@ static void weather_render(Layer *me, GContext *ctx) {
   cond_current[1] = '\0';
 
   setColors(ctx);
+  GFont temp_font = fonts_get_system_font(s_compact ? FONT_KEY_GOTHIC_18 : FONT_KEY_GOTHIC_24);
+  int temp_top = s_compact ? 40 : 42;
   graphics_draw_text(ctx, cond_current, climacons, GRect(2,16,34,34), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-  graphics_draw_text(ctx, temp_current, fonts_get_system_font(FONT_KEY_GOTHIC_24), GRect(2,42,36,36), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  graphics_draw_text(ctx, temp_current, temp_font, GRect(2,temp_top,36,36), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
   if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Weather redrawing: %d, %s", weather_state()->current, weather_state()->condition); }
 }
 

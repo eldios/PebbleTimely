@@ -1164,7 +1164,11 @@ static void window_load(Window *window) {
 
   unifont_16 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_UNICODE_16));
   unifont_16_bold = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_UNICODE_BOLD_16));
-  climacons  = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_CLIMACONS_32));
+  // Narrow screens use a slightly smaller weather glyph so it balances the
+  // compact clock/temperature; wide screens (emery) keep the larger one.
+  climacons  = fonts_load_custom_font(resource_get_handle(
+    (DEVICE_WIDTH >= 180) ? RESOURCE_ID_FONT_CLIMACONS_32 : RESOURCE_ID_FONT_CLIMACONS_28));
+  weather_set_compact(DEVICE_WIDTH < 180);
   cal_normal = unifont_16;
   cal_bold   = unifont_16_bold;
 
@@ -1247,7 +1251,12 @@ static void window_load(Window *window) {
   weather_create(datetime_layer, slot_top_bounds);
 
   time_layer = text_layer_create( GRect(REL_CLOCK_TIME_LEFT, REL_CLOCK_TIME_TOP, DEVICE_WIDTH - 2, REL_CLOCK_TIME_HEIGHT) ); // see position_time_layer()
-  set_layer_attr_sfont(time_layer, FONT_KEY_ROBOTO_BOLD_SUBSET_49, GTextAlignmentCenter); // crisp system clock font
+  // Width-aware clock font: Roboto 49 needs ~130px, which on a 144px screen
+  // collides with the weather to its left. Wide screens (emery) keep it; narrow
+  // screens use the condensed LECO clock font so the weather has room.
+  set_layer_attr_sfont(time_layer,
+    (DEVICE_WIDTH >= 180) ? FONT_KEY_ROBOTO_BOLD_SUBSET_49 : FONT_KEY_LECO_38_BOLD_NUMBERS,
+    GTextAlignmentCenter);
   toggle_weather();
   position_time_layer(); // make use of our whitespace, if we have it...
   update_time_text();
