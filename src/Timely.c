@@ -580,24 +580,19 @@ void position_date_layer() {
 }
 
 void position_day_layer() {
-  // potentially adjust the day position, depending on language/font
-  static int day_vert_offset = 0;
-  if ( strcmp(lang_gen_get()->language,"RU") == 0 ) { // Unicode font w/ Cyrillic characters
-    day_vert_offset = -2;
-  } else { // Standard font
-    day_vert_offset = 0;
-  }
-  // Middle complication: confined to the centre third so it never overlaps the
-  // left (week) and right (am/pm) complications.
-  int third = DEVICE_WIDTH / 3;
-  layer_set_frame( text_layer_get_layer(day_layer), GRect(third, REL_CLOCK_SUBTEXT_TOP + day_vert_offset, third, 22) );
+  // Two complications above the calendar, each its own half-width (left-aligned
+  // and right-aligned). Re-applied here so the RU font's vertical nudge sticks.
+  int voff = (strcmp(lang_gen_get()->language, "RU") == 0) ? -2 : 0;
+  int half = DEVICE_WIDTH / 2;
+  layer_set_frame( text_layer_get_layer(week_layer), GRect(2, REL_CLOCK_SUBTEXT_TOP + voff, half - 4, 22) );
+  layer_set_frame( text_layer_get_layer(ampm_layer), GRect(half + 2, REL_CLOCK_SUBTEXT_TOP + voff, half - 4, 22) );
 }
 
 void position_time_layer() {
   // potentially adjust the clock position, if we've added/removed the week, day, or AM/PM layers
   static int time_offset = 0;
   static int weather_offset = 0;
-  if (!settings_get()->show_day && !settings_get()->show_week && !settings_get()->show_am_pm) {
+  if (!settings_get()->show_week && !settings_get()->show_am_pm) {
     time_offset = 12;
     weather_offset = 0;
   } else {
@@ -654,7 +649,7 @@ void toggle_statusbar() {
     layer_set_hidden(statusbar, false);
     // date
     layer_add_child(datetime_layer, text_layer_get_layer(date_layer));
-    if (adv_settings_get()->weather_update && (settings_get()->show_day || settings_get()->show_week || settings_get()->show_am_pm)) {
+    if (adv_settings_get()->weather_update && (settings_get()->show_week || settings_get()->show_am_pm)) {
       text_layer_set_text_alignment(date_layer, GTextAlignmentRight);
     } else {
       text_layer_set_text_alignment(date_layer, GTextAlignmentCenter);
@@ -1167,22 +1162,20 @@ static void window_load(Window *window) {
   update_time_text();
   layer_add_child(datetime_layer, text_layer_get_layer(time_layer));
 
-  week_layer = text_layer_create( GRect(2, REL_CLOCK_SUBTEXT_TOP, DEVICE_WIDTH / 3 - 2, 22) ); // left third
+  week_layer = text_layer_create( GRect(2, REL_CLOCK_SUBTEXT_TOP, DEVICE_WIDTH / 2 - 4, 22) ); // left half
   set_layer_attr_sfont(week_layer, FONT_KEY_GOTHIC_18, GTextAlignmentLeft);
   layer_add_child(datetime_layer, text_layer_get_layer(week_layer));
   if ( settings_get()->show_week == 0 ) {
     layer_set_hidden(text_layer_get_layer(week_layer), true);
   }
 
-  day_layer = text_layer_create( GRect(4, REL_CLOCK_SUBTEXT_TOP, REL_CLOCK_DATE_WIDTH, 22) ); // see position_day_layer()
+  // Middle slot retired: only two complications above the calendar (left/right).
+  day_layer = text_layer_create( GRect(4, REL_CLOCK_SUBTEXT_TOP, REL_CLOCK_DATE_WIDTH, 22) );
   set_layer_attr_sfont(day_layer, FONT_KEY_GOTHIC_18, GTextAlignmentCenter);
-  position_day_layer(); // depends on font/language
   layer_add_child(datetime_layer, text_layer_get_layer(day_layer));
-  if ( settings_get()->show_day == 0 ) {
-    layer_set_hidden(text_layer_get_layer(day_layer), true);
-  }
+  layer_set_hidden(text_layer_get_layer(day_layer), true);
 
-  ampm_layer = text_layer_create( GRect(DEVICE_WIDTH - DEVICE_WIDTH / 3, REL_CLOCK_SUBTEXT_TOP, DEVICE_WIDTH / 3 - 2, 22) ); // right third
+  ampm_layer = text_layer_create( GRect(DEVICE_WIDTH / 2 + 2, REL_CLOCK_SUBTEXT_TOP, DEVICE_WIDTH / 2 - 4, 22) ); // right half
   set_layer_attr_sfont(ampm_layer, FONT_KEY_GOTHIC_18, GTextAlignmentRight);
   layer_add_child(datetime_layer, text_layer_get_layer(ampm_layer));
   if ( settings_get()->show_am_pm == 0 ) {

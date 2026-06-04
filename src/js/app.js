@@ -306,10 +306,15 @@ V = waning crescent 0.25 +
 Pebble.addEventListener("webviewclosed", function (e) {
     if (!e || !e.response) { return; } // user cancelled
 
-    // The page sends a JSON object keyed by message-key name with integer values.
+    // The page sends only the keys that changed. Merge them into the stored
+    // settings (don't overwrite) so the config page keeps the full picture and
+    // doesn't show untouched settings as reset on the next open.
     var dict;
     try { dict = JSON.parse(decodeURIComponent(e.response)); } catch (err) { return; }
-    localStorage.setItem("timely_settings", JSON.stringify(dict));
+    var stored = {};
+    try { stored = JSON.parse(localStorage.getItem("timely_settings") || "{}"); } catch (err) {}
+    for (var k in dict) { stored[k] = dict[k]; }
+    localStorage.setItem("timely_settings", JSON.stringify(stored));
 
     Pebble.sendAppMessage(dict,
         function (e) {

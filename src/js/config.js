@@ -79,9 +79,8 @@ module.exports = [
       { key: 'strftime_format', label: 'Custom format', type: 'text', def: '%Y-%m-%d', max: 31,
         showWhen: { key: 'intl_fmt_date', val: 255 },
         note: 'strftime pattern, e.g. %a %d %b. Used when Date format is Custom.' },
-      { key: 'style_week', label: 'Below time, left', type: 'select', def: 0, options: SLOTS },
-      { key: 'style_day', label: 'Below time, middle', type: 'select', def: 0, options: SLOTS },
-      { key: 'style_am_pm', label: 'Below time, right', type: 'select', def: 0, options: SLOTS },
+      { key: 'style_week', label: 'Above calendar, left', type: 'select', def: 0, options: SLOTS },
+      { key: 'style_am_pm', label: 'Above calendar, right', type: 'select', def: 0, options: SLOTS },
       { key: 'intl_fmt_week', label: 'Week numbering', type: 'select', def: 0,
         options: [['ISO 8601', 0], ['Sun 1st of W1', 1], ['Mon 1st of W1', 2]] }
     ]
