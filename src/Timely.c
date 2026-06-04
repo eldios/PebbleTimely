@@ -122,6 +122,8 @@ static bool showing_statusbar = true;
 #define AK_IDLE_STOP             34 // UNUSED
 #define AK_WEATHER_FMT           35
 #define AK_WEATHER_UPDATE        36
+#define AK_THEME                 37
+#define AK_THEME_MODE            38
 
 #define AK_MESSAGE_TYPE          99
 #define AK_SEND_BATT_PERCENT    100
@@ -1631,6 +1633,17 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
       }
       adv_settings_get()->weather_update = appkey->value->uint8;
     }
+
+    // AK_THEME == color theme id; AK_THEME_MODE == 0 light / 1 dark / 2 auto
+    appkey = dict_find(received, AK_THEME);
+    if (appkey != NULL && appkey->value->uint8 < THEME_COUNT) {
+      settings_get()->theme = appkey->value->uint8;
+    }
+    appkey = dict_find(received, AK_THEME_MODE);
+    if (appkey != NULL && appkey->value->uint8 <= THEME_MODE_AUTO) {
+      settings_get()->theme_mode = appkey->value->uint8;
+    }
+
     statusbar_visible();
     toggle_weather();
     toggle_statusbar();
@@ -1734,8 +1747,9 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     // PebbleKit JS - more information from phone
     // ==== Future improvements ====
     // Positioning - top, bottom, etc.
-  if (1) { calendar_mark_dirty(); } // TODO
-  if (1) { layer_mark_dirty(datetime_layer); } // TODO
+  apply_palette(); // re-tint text + icons for the (possibly new) theme
+  calendar_mark_dirty();
+  layer_mark_dirty(datetime_layer);
 }
 
 void my_in_rcv_handler(DictionaryIterator *received, void *context) {

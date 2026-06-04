@@ -58,6 +58,8 @@
     "idle_stop": 34,
     "weather_fmt": 35,
     "weather_update": 36,
+    "theme": 37,
+    "theme_mode": 38,
     "message_type": 99,
     "send_batt_percent": 100,
     "send_batt_charging": 101,
