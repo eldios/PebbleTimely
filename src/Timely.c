@@ -633,7 +633,7 @@ void update_date_text() {
       "%y%m%e",   // 248 YYMMdd
     };
     char date_text[24];
-    static char date_string[48];
+    static char date_string[64]; // localized "%s %s %s" date; sized to avoid truncation under modern gcc
     // http://www.cplusplus.com/reference/ctime/strftime/
 
     if (settings.date_format < 195) { // localized date formats...

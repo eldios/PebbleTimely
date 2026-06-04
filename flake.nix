@@ -1,5 +1,5 @@
 {
-  description = "Timely watchface for Pebble - SDK dev shell + host unit tests";
+  description = "TimelyColor watchface for Pebble - SDK dev shell + host unit tests";
 
   inputs = {
     pebble.url = "github:pebble-dev/pebble.nix";
@@ -11,8 +11,8 @@
   # Usage (official Pebble SDK flow, https://developer.repebble.com/sdk/):
   #   nix develop
   #   pebble sdk install latest          # first time only; caches in ~/.pebble-sdk
-  #   pebble build                       # produces build/Timely.pbw
-  #   pebble install --emulator basalt   # run in the QEMU emulator
+  #   pebble build                       # produces build/TimelyColor.pbw
+  #   pebble install --emulator emery    # color emulator (or basalt/flint/...)
   #   pebble login && pebble install --cloudpebble   # push to a paired watch
   # Host unit tests (pure logic in src/, no Pebble SDK):
   #   nix flake check                          # reproducible, CI
@@ -21,8 +21,6 @@
   # shell hijacks the ARM cross-build ("gcc: unrecognized option -mthumb").
   outputs =
     { nixpkgs, pebble, flake-utils, ... }:
-    # Restrict to the systems pebble.nix actually builds for (no aarch64-linux),
-    # otherwise per-system access to pebble.* errors out on unsupported hosts.
     flake-utils.lib.eachSystem [
       "x86_64-linux"
       "x86_64-darwin"
@@ -35,14 +33,22 @@
         in
         {
           # Pebble SDK shell: pebble CLI + ARM toolchain + QEMU emulator, plus
-          # just/make task runners. No host cc here: it would hijack the ARM
-          # cross-build. Run the unit tests from devShells.test instead.
+          # just/make task runners. No host cc here (it hijacks the ARM build).
           devShells.default = pebble.pebbleEnv.${system} {
-            emulatorTarget = "basalt";
+            emulatorTarget = "emery";
             packages = [
               pkgs.just
               pkgs.gnumake
             ];
+            # This 2013 codebase under the modern arm-none-eabi gcc 14 trips many
+            # warnings the SDK promotes to errors (format/stringop truncation,
+            # implicit-fallthrough, ...). The SDK's own suppressions do not reach
+            # the new flint platform, so downgrade warnings to non-fatal here (the
+            # SDK itself already disables ~40 such classes). Set via shellHook
+            # because pebbleEnv's CFLAGS arg is not exported by nix develop.
+            shellHook = ''
+              export CFLAGS="-Wno-error"
+            '';
           };
 
           # Host shell for the unit tests: C compiler + just/make.

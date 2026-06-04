@@ -1,14 +1,17 @@
 {
-  "uuid": "55f7744b-f586-45b8-854c-554f34489f20",
-  "shortName": "Timely",
-  "longName": "Timely 2.6",
-  "companyName": "Martin Norland (@cynorg)",
-  "versionCode": 2,
-  "versionLabel": "2.6",
+  "uuid": "de253577-14c6-4ab2-9db6-65bda1c7c1d2",
+  "shortName": "TimelyColor",
+  "longName": "TimelyColor",
+  "companyName": "Emanuele 'Lele' Calo",
+  "versionCode": 3,
+  "versionLabel": "3.0",
   "sdkVersion": "3",
   "targetPlatforms": [
     "aplite",
-    "basalt"
+    "basalt",
+    "diorite",
+    "emery",
+    "flint"
   ],
   "watchapp": {
     "watchface": true
@@ -166,10 +169,5 @@
         "file": "fonts/Climacons.ttf"
       }
     ]
-  },
-  "targetPlatforms": [
-    "aplite",
-    "basalt"
-  ],
-  "sdkVersion": "3"
+  }
 }
