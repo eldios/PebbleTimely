@@ -2,6 +2,7 @@
 #include <Timely.h>
 #include "effect_layer.h"
 #include "timefmt.h"
+#include "layout.h"
 #define DEBUGLOG 0
 #define TRANSLOG 0
 #define CONFIG_VERSION "2.6"
@@ -175,13 +176,13 @@ static bool showing_statusbar = true;
 #define AK_TRANS_ABBR_DECEMBER   542
 
 // primary coordinates
-#define DEVICE_WIDTH        144
-#define DEVICE_HEIGHT       168
-#define LAYOUT_STAT           0 // 20 tall
-#define LAYOUT_SLOT_TOP      24 // 72 tall
-#define LAYOUT_SLOT_BOT      96 // 72 tall, 4px gap above
-#define LAYOUT_SLOT_HEIGHT   72
-#define STAT_BATT_LEFT       96 // LEFT + WIDTH + NIB_WIDTH <= 143
+static int DEVICE_WIDTH  = 144; // recomputed per-screen by compute_layout()
+static int DEVICE_HEIGHT = 168;
+static int LAYOUT_STAT = 0;
+static int LAYOUT_SLOT_TOP = 24;
+static int LAYOUT_SLOT_BOT = 96;
+static int LAYOUT_SLOT_HEIGHT = 72;
+static int STAT_BATT_LEFT = 96; // right-aligned at runtime
 #define STAT_BATT_TOP         4
 #define STAT_BATT_WIDTH      44 // should be divisible by 10, after subtracting 4 (2 pixels/side for the 'border')
 #define STAT_BATT_HEIGHT     15
@@ -189,18 +190,43 @@ static bool showing_statusbar = true;
 #define STAT_BATT_NIB_HEIGHT  5 // >= 3
 #define STAT_BT_ICON_LEFT    -2 // 0
 #define STAT_BT_ICON_TOP      2
-#define STAT_CHRG_ICON_LEFT  76
+static int STAT_CHRG_ICON_LEFT = 76; // right-aligned at runtime
 #define STAT_CHRG_ICON_TOP    2
 
 // relative coordinates (relative to SLOTs)
-#define REL_CLOCK_DATE_LEFT       2
-#define REL_CLOCK_DATE_TOP        0
-#define REL_CLOCK_DATE_HEIGHT    30 // date/time overlap, due to the way text is 'positioned'
-#define REL_CLOCK_DATE_WIDTH    140
-#define REL_CLOCK_TIME_LEFT       0
-#define REL_CLOCK_TIME_TOP        7
-#define REL_CLOCK_TIME_HEIGHT    60 // date/time overlap, due to the way text is 'positioned'
-#define REL_CLOCK_SUBTEXT_TOP    56 // time/ampm overlap, due to the way text is 'positioned'
+static int REL_CLOCK_DATE_LEFT = 2;
+static int REL_CLOCK_DATE_TOP = 0;
+static int REL_CLOCK_DATE_HEIGHT = 30;
+static int REL_CLOCK_DATE_WIDTH = 140;
+static int REL_CLOCK_TIME_LEFT = 0;
+static int REL_CLOCK_TIME_TOP = 7;
+static int REL_CLOCK_TIME_HEIGHT = 60;
+static int REL_CLOCK_SUBTEXT_TOP = 56;
+static int CAL_WIDTH  = 20; // calendar column width (recomputed at runtime)
+static int CAL_HEIGHT = 18; // calendar row height   (recomputed at runtime)
+
+// Recompute the runtime layout for the actual screen. Defaults above match
+// the classic 144x168; this rescales every band/cell for larger screens.
+static void compute_layout(int w, int h) {
+  TimelyLayout L = layout_compute(w, h);
+  DEVICE_WIDTH = w; DEVICE_HEIGHT = h;
+  LAYOUT_STAT = L.statusbar.y;
+  LAYOUT_SLOT_TOP = L.slot_top.y;
+  LAYOUT_SLOT_BOT = L.slot_bot.y;
+  LAYOUT_SLOT_HEIGHT = L.slot_top.h;
+  STAT_BATT_LEFT = L.battery.x;
+  STAT_CHRG_ICON_LEFT = L.chrg_icon_x;
+  REL_CLOCK_DATE_LEFT = L.clock_date.x;
+  REL_CLOCK_DATE_TOP = L.clock_date.y;
+  REL_CLOCK_DATE_HEIGHT = L.clock_date.h;
+  REL_CLOCK_DATE_WIDTH = L.clock_date.w;
+  REL_CLOCK_TIME_LEFT = L.clock_time.x;
+  REL_CLOCK_TIME_TOP = L.clock_time.y;
+  REL_CLOCK_TIME_HEIGHT = L.clock_time.h;
+  REL_CLOCK_SUBTEXT_TOP = L.subtext_top;
+  CAL_WIDTH = L.cal_cell_w;
+  CAL_HEIGHT = L.cal_cell_h;
+}
 
 #define SLOT_ID_CLOCK_1  0
 #define SLOT_ID_CALENDAR 1
@@ -483,10 +509,8 @@ void calendar_layer_update_callback(Layer *me, GContext* ctx) {
 // ---------------------------
 
     #define CAL_DAYS   7   // number of columns (days of the week)
-    #define CAL_WIDTH  20  // width of columns
     #define CAL_GAP    1   // gap around calendar
     #define CAL_LEFT   2   // left side of calendar
-    #define CAL_HEIGHT 18  // How tall rows should be depends on how many weeks there are
 
     int weeks  =  3;  // always display 3 weeks: # previous, current, # next
         
@@ -1366,6 +1390,7 @@ static void window_load(Window *window) {
 
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
+  compute_layout(bounds.size.w, bounds.size.h);
 
   slot_status = layer_create(GRect(0,LAYOUT_STAT,DEVICE_WIDTH,LAYOUT_SLOT_TOP));
   //slot_status = layer_create(GRect(0,0,DEVICE_WIDTH,DEVICE_HEIGHT));
