@@ -103,11 +103,19 @@ var locationWatcher;
 var lastCoordinates;
 var weatherFormat;
 
+// Report the phone's battery level to the watch (Web Battery API, where the
+// runtime exposes it; silently skipped otherwise).
+function updatePhoneBattery() {
+    if (!navigator.getBattery) { return; }
+    navigator.getBattery().then(function (b) {
+        Pebble.sendAppMessage({ message_type: 110, phone_battery: Math.round(b.level * 100) });
+    }).catch(function () {});
+}
+
 Pebble.addEventListener("ready", function (e) {
-//    console.log("Connect! " + e.ready);
-//    locationWatcher = window.navigator.geolocation.watchPosition(weatherLocationSuccess, locationError, locationOptions);
-//    navigator.geolocation.clearWatch(locationWatcher);
     getWatchVersion();
+    updatePhoneBattery();
+    setInterval(updatePhoneBattery, 30 * 60 * 1000); // refresh every 30 min
 });
 
 Pebble.addEventListener("showConfiguration", function () {

@@ -60,6 +60,8 @@ static EffectLayer *battery_meter_layer;
 static uint8_t battery_percent = 10;
 static bool battery_charging = false;
 static bool battery_plugged = false;
+static int phone_battery_percent = -1; // -1 = unknown (phone hasn't reported / API unavailable)
+static char connection_text_buf[16];
 AppTimer *battery_sending = NULL;
 AppTimer *timezone_request = NULL;
 AppTimer *weather_request = NULL;
@@ -136,6 +138,7 @@ static bool showing_statusbar = true;
 #define AK_WEATHER_TEMP         107
 #define AK_WEATHER_COND         108
 #define AK_WEATHER_CITY         109
+#define AK_PHONE_BATTERY        110
 
 #define AK_TRANS_ABBR_SUNDAY    500
 #define AK_TRANS_ABBR_MONDAY    501
@@ -934,8 +937,19 @@ void generate_vibe(uint32_t vibe_pattern_number) {
   }
 }
 
+// Connection text area doubles as the phone-battery readout: when connected and
+// the phone has reported its level, show "Ph NN%"; otherwise the link status.
+void set_connection_text(void) {
+  if (bluetooth_connected && phone_battery_percent >= 0) {
+    snprintf(connection_text_buf, sizeof(connection_text_buf), "Ph %d%%", phone_battery_percent);
+    text_layer_set_text(text_connection_layer, connection_text_buf);
+  } else {
+    text_layer_set_text(text_connection_layer, bluetooth_connected ? lang_gen_get()->statuses[0] : lang_gen_get()->statuses[1]);
+  }
+}
+
 void update_connection() {
-  text_layer_set_text(text_connection_layer, bluetooth_connected ? lang_gen_get()->statuses[0] : lang_gen_get()->statuses[1]) ;
+  set_connection_text();
   if (bluetooth_connected) {
     generate_vibe(settings_get()->vibe_pat_connect);  // non-op, by default
     bitmap_layer_set_bitmap(bmp_connection_layer, image_connection_icon);
@@ -1749,6 +1763,11 @@ void my_in_rcv_handler(DictionaryIterator *received, void *context) {
     case AK_REQUEST_WEATHER:
       in_weather_handler(received, context);
       return;
+    case AK_PHONE_BATTERY: {
+      Tuple *pb = dict_find(received, AK_PHONE_BATTERY);
+      if (pb != NULL) { phone_battery_percent = pb->value->uint8; set_connection_text(); }
+      return;
+    }
     }
   } else {
     // default to configuration, which may not send the message type...
