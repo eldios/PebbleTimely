@@ -134,6 +134,7 @@
       "phone_battery": 110,
       "weather_lat": 111,
       "weather_lon": 112,
+      "clock2_tz": 113,
       "trans_abbr_sunday": 500,
       "trans_abbr_monday": 501,
       "trans_abbr_tuesday": 502,

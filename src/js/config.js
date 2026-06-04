@@ -12,8 +12,18 @@ var VIBES = [
 var SLOTS = [
   ['—', 0], ['Day', 1], ['Month', 2], ['Week', 3], ['Timezone', 4], ['AM/PM', 5],
   ['Day of year', 6], ['Days left in year', 7], ['Day of year / left', 8],
-  ['Seconds', 9], ['Location', 10], ['Sunrise', 11], ['Sunset', 12], ['Moon phase', 13]
+  ['Seconds', 9], ['Location', 10], ['Sunrise', 11], ['Sunset', 12], ['Moon phase', 13],
+  ['2nd time zone', 14]
 ];
+
+// UTC offsets for the second time zone (whole hours).
+var TZ_OFFSETS = (function () {
+  var o = [];
+  for (var h = -12; h <= 14; h++) {
+    o.push([h === 0 ? 'UTC' : 'UTC' + (h > 0 ? '+' + h : h), h]);
+  }
+  return o;
+})();
 
 // Date formats; values must match update_date_text() in Timely.c. 255 = custom.
 var DATE_FORMATS = [
@@ -82,7 +92,9 @@ module.exports = [
       { key: 'style_week', label: 'Above calendar, left', type: 'select', def: 0, options: SLOTS },
       { key: 'style_am_pm', label: 'Above calendar, right', type: 'select', def: 0, options: SLOTS },
       { key: 'intl_fmt_week', label: 'Week numbering', type: 'select', def: 0,
-        options: [['ISO 8601', 0], ['Sun 1st of W1', 1], ['Mon 1st of W1', 2]] }
+        options: [['ISO 8601', 0], ['Sun 1st of W1', 1], ['Mon 1st of W1', 2]] },
+      { key: 'clock2_tz', label: '2nd time zone', type: 'select', def: 0, options: TZ_OFFSETS,
+        note: 'Used by the "2nd time zone" complication.' }
     ]
   },
   {

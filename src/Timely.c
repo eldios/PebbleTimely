@@ -142,6 +142,7 @@ static bool showing_statusbar = true;
 #define AK_PHONE_BATTERY        110
 #define AK_WEATHER_LAT          111
 #define AK_WEATHER_LON          112
+#define AK_CLOCK2_TZ            113
 
 #define AK_TRANS_ABBR_SUNDAY    500
 #define AK_TRANS_ABBR_MONDAY    501
@@ -549,6 +550,20 @@ void update_moon_text(TextLayer *which_layer) {
   text_layer_set_text(which_layer, PHASES[phase]);
 }
 
+// Second time zone: local time shifted to clock2_tz (UTC offset, whole hours).
+void update_clock2_text(TextLayer *which_layer) {
+  static char buf[8];
+  if (!currentTime || timezone_offset == TIMEZONE_UNINITIALIZED) {
+    text_layer_set_text(which_layer, "--:--");
+    return;
+  }
+  int local_tz_min = -timezone_offset * 15; // local UTC offset in minutes
+  int utc_min = currentTime->tm_hour * 60 + currentTime->tm_min - local_tz_min;
+  int second_min = (((utc_min + adv_settings_get()->clock2_tz * 60) % 1440) + 1440) % 1440;
+  snprintf(buf, sizeof(buf), "%d:%02d", second_min / 60, second_min % 60);
+  text_layer_set_text(which_layer, buf);
+}
+
 char * get_doy_text() {
   static char doy_text[] = "D000";
   strftime(doy_text, sizeof(doy_text), "D%j", currentTime);
@@ -599,6 +614,7 @@ void update_slot_text(TextLayer *layer, uint8_t content) {
   case 11: update_sunrise_text(layer);   break; // Sunrise
   case 12: update_sunset_text(layer);    break; // Sunset
   case 13: update_moon_text(layer);      break; // Moon phase
+  case 14: update_clock2_text(layer);    break; // Second time zone
   default: break;                                // 0 = hidden
   }
 }
@@ -1623,6 +1639,10 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     // AK_SHOW_STAT_BATT == statusbar battery limit
     appkey = dict_find(received, AK_SHOW_STAT_BATT);
     if (appkey != NULL) { adv_settings_get()->showStatusBat = appkey->value->uint8; }
+
+    // AK_CLOCK2_TZ == second time zone UTC offset (whole hours, signed)
+    appkey = dict_find(received, AK_CLOCK2_TZ);
+    if (appkey != NULL) { adv_settings_get()->clock2_tz = appkey->value->int8; }
 
     // AK_SHOW_DATE == show date // TODO, UNUSED
     appkey = dict_find(received, AK_SHOW_DATE);
