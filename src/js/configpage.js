@@ -124,12 +124,26 @@ var CSS = [
 ].join('');
 
 function buildConfigPage(spec, current) {
+  current = current || {};
   var body = '';
+  // Baseline = the value each control starts at; on submit we send only the keys
+  // that actually changed, keeping the pebblejs://close payload small (a full
+  // dump of every setting exceeds the close-URL length and gets dropped).
+  var baseline = {};
   for (var s = 0; s < spec.length; s++) {
     var sec = spec[s];
     body += '<details' + (sec.open === false ? '' : ' open') + '><summary>' + esc(sec.title) + '</summary>';
-    for (var i = 0; i < sec.fields.length; i++) { body += renderField(sec.fields[i], current); }
+    for (var i = 0; i < sec.fields.length; i++) {
+      var f = sec.fields[i];
+      body += renderField(f, current);
+      if (f.key) { baseline[f.key] = (current[f.key] != null) ? current[f.key] : f.def; }
+    }
     body += '</details>';
+  }
+  // Keys derived from the scheduled (vibe/dnd) controls also need a baseline.
+  var derived = ['vibe_days', 'vibe_hour', 'vibe_start', 'vibe_stop', 'dnd_noaccel', 'dnd_start', 'dnd_stop'];
+  for (var d2 = 0; d2 < derived.length; d2++) {
+    baseline[derived[d2]] = (current[derived[d2]] != null) ? current[derived[d2]] : 0;
   }
   var script =
     // Read return_to from the full href: data:/file: URIs do not populate
@@ -138,6 +152,7 @@ function buildConfigPage(spec, current) {
     'function qp(n,d){var m=(location.href||"").match(new RegExp("[?&]"+n+"=([^&#]*)"));' +
     'return m?decodeURIComponent(m[1]):d;}' +
     'var RET=qp("return_to","pebblejs://close#");' +
+    'var BASELINE=' + JSON.stringify(baseline) + ';' +
     'function val(e){var t=e.getAttribute("data-type");' +
     'if(t==="bool")return e.checked?1:0;' +
     'if(t==="str")return e.value;' +
@@ -170,7 +185,9 @@ function buildConfigPage(spec, current) {
     'els=document.querySelectorAll("[data-key]");for(var i=0;i<els.length;i++){' +
     'o[els[i].getAttribute("data-key")]=val(els[i]);}' +
     'if(augment(o)===false)return;' +
-    'document.location=RET+encodeURIComponent(JSON.stringify(o));};';
+    // Send only changed keys: the watch keeps its current value for anything omitted.
+    'var send={};for(var k in o){if(String(o[k])!==String(BASELINE[k]))send[k]=o[k];}' +
+    'document.location=RET+encodeURIComponent(JSON.stringify(send));};';
   return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width,initial-scale=1">' +
     '<title>TimelyNG settings</title><style>' + CSS + '</style></head><body>' +
