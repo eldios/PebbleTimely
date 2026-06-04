@@ -534,6 +534,21 @@ void update_sunrise_text(TextLayer *l) { text_layer_set_text(l, "--:--"); }
 void update_sunset_text(TextLayer *l)  { text_layer_set_text(l, "--:--"); }
 #endif
 
+// Moon phase from the date only (Conway's approximation; no coords needed).
+void update_moon_text(TextLayer *which_layer) {
+  static const char *PHASES[8] = { "New", "Wax cres", "1st qtr", "Wax gib",
+                                   "Full", "Wan gib", "Last qtr", "Wan cres" };
+  if (!currentTime) { text_layer_set_text(which_layer, "Moon"); return; }
+  int y = currentTime->tm_year + 1900, m = currentTime->tm_mon + 1, d = currentTime->tm_mday;
+  int r = y % 100; r %= 19; if (r > 9) { r -= 19; }
+  r = ((r * 11) % 30) + m + d; if (m < 3) { r += 2; }
+  r -= (y < 2000) ? 4 : 8;
+  int age = ((r % 30) + 30) % 30; // 0..29 days into the lunation
+  int phase = (age < 2 || age >= 28) ? 0 : (age < 6 ? 1 : (age < 9 ? 2 : (age < 13 ? 3 :
+              (age < 17 ? 4 : (age < 20 ? 5 : (age < 24 ? 6 : 7))))));
+  text_layer_set_text(which_layer, PHASES[phase]);
+}
+
 char * get_doy_text() {
   static char doy_text[] = "D000";
   strftime(doy_text, sizeof(doy_text), "D%j", currentTime);
@@ -583,6 +598,7 @@ void update_slot_text(TextLayer *layer, uint8_t content) {
   case 10: update_location_text(layer);  break; // Weather location
   case 11: update_sunrise_text(layer);   break; // Sunrise
   case 12: update_sunset_text(layer);    break; // Sunset
+  case 13: update_moon_text(layer);      break; // Moon phase
   default: break;                                // 0 = hidden
   }
 }
