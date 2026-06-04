@@ -1,5 +1,5 @@
 #include <pebble.h>
-#include <Timely.h>
+#include "Timely.h"
 #include "effect_layer.h"
 #include "timefmt.h"
 #include "layout.h"
