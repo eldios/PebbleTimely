@@ -1,25 +1,65 @@
-Timely Watchface for Pebble
+TimelyColor — a calendar watchface for Pebble
 
-This is a Watchface for the Pebble Watch.  It shows the current date and current time in the top 'half', optionally including the weather conditions and temperature, and then a small calendar w/ 3 weeks (current and any 2 weeks around it), in the bottom 'half'.  The statusbar at the top shows the connection status, charging, and battery level.  The text and date formats on the watch are fully localizable through the configuration screen, and various display options/preferences can be configured including vibrating in unique ways (or not at all) on the hour, and on link lost/regained.
+TimelyColor is a watchface for Pebble watches. It shows the current date and
+time in the top half (optionally with weather conditions and temperature) and a
+small 3-week calendar (previous, current and next week) in the bottom half. The
+status bar shows connection, charging and battery level. Text and date formats
+are fully localizable through the configuration screen, with options such as
+per-hour and link-lost/regained vibration.
 
-The settings and localization for the face are configurable using the new PebbleKit JS configuration page.
+This is a modernized fork of the original "Timely" watchface, updated to build
+with the current Core Devices Pebble SDK and to run on the new hardware:
 
-Special thanks: 
- - 'Climacons' by @adamwhitcroft, compiled into a TTF font by @christiannaths
-   - http://adamwhitcroft.com/climacons/
+  - Pebble Time 2 (emery, color, 200x228)
+  - Pebble 2 Duo / Core 2 Duo (flint, black & white, 144x168)
+  - and the classic Pebble platforms (aplite, basalt, diorite)
+
+Color is used where the hardware supports it (e.g. the current day is accented
+in the calendar) with graceful fallback to black & white on monochrome watches.
+Round platforms (chalk / gabbro) are not targeted yet — the layout is
+rectangle-centric.
+
+Building (NixOS / Nix, official Pebble CLI flow)
+
+  nix develop                      # pebble CLI + ARM toolchain + emulator
+  pebble sdk install latest        # first time only
+  pebble build                     # -> build/PebbleTimely.pbw
+  pebble install --emulator emery  # color emulator (or basalt / flint / ...)
+  pebble login && pebble install --cloudpebble   # to a paired watch
+
+Tests (pure date/timezone logic, host-compiled, no Pebble SDK)
+
+  nix flake check                  # reproducible
+  nix develop .#test -c just test  # or: make test
 
 License
 
-Timely watchface [https://github.com/cynorg/PebbleTimely]
-Copyright (C) 2013 Martin Norland <cyn@cyn.org>
+TimelyColor is free software under the GNU General Public License, version 3 or
+(at your option) any later version. See LICENSE.
 
-Timely Watchface for Pebble is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+This is a modified version of the original work; significant changes from the
+upstream "Timely" include modernization for the current Pebble SDK, support for
+the new Core Devices watches (emery / flint), a color theme with monochrome
+fallback, and a host-side unit-test suite.
 
-Timely Watchface for Pebble is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+  TimelyColor modifications
+  Copyright (C) 2026 Emanuele "Lele" Calo <emanuele.lele.calo@gmail.com>
 
-Includes updates, contributions and improvements from Ben Johnson [https://github.com/cktben/PebbleTimely.git]
+  Based on Timely Watchface for Pebble [https://github.com/cynorg/PebbleTimely]
+  Copyright (C) 2013 Martin Norland <cyn@cyn.org>
+  Includes updates, contributions and improvements from Ben Johnson
+  [https://github.com/cktben/PebbleTimely.git]
 
-Original PebbleCalendarWatch License [https://github.com/WilliamHeaton/PebbleCalendarWatch]
-Copyright (C) 2013 William Heaton <William.G.Heaton@gmail.com>
+  Original PebbleCalendarWatch [https://github.com/WilliamHeaton/PebbleCalendarWatch]
+  Copyright (C) 2013 William Heaton <William.G.Heaton@gmail.com>
 
-You should have received a copy of the GNU General Public License along with Timely Watchface for Pebble. If not, see http://www.gnu.org/licenses/.
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE. See the GNU General Public License for more details. You
+should have received a copy of the GNU General Public License along with this
+program. If not, see http://www.gnu.org/licenses/.
+
+Special thanks
+
+  - 'Climacons' by @adamwhitcroft, compiled into a TTF font by @christiannaths
+    - http://adamwhitcroft.com/climacons/
