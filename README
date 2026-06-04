@@ -1,6 +1,6 @@
-TimelyColor — a calendar watchface for Pebble
+TimelyNG — a calendar watchface for Pebble
 
-TimelyColor is a watchface for Pebble watches. It shows the current date and
+TimelyNG is a watchface for Pebble watches. It shows the current date and
 time in the top half (optionally with weather conditions and temperature) and a
 small 3-week calendar (previous, current and next week) in the bottom half. The
 status bar shows connection, charging and battery level. Text and date formats
@@ -34,7 +34,7 @@ Tests (pure date/timezone logic, host-compiled, no Pebble SDK)
 
 License
 
-TimelyColor is free software under the GNU General Public License, version 3 or
+TimelyNG is free software under the GNU General Public License, version 3 or
 (at your option) any later version. See LICENSE.
 
 This is a modified version of the original work; significant changes from the
@@ -42,7 +42,7 @@ upstream "Timely" include modernization for the current Pebble SDK, support for
 the new Core Devices watches (emery / flint), a color theme with monochrome
 fallback, and a host-side unit-test suite.
 
-  TimelyColor modifications
+  TimelyNG modifications
   Copyright (C) 2026 Emanuele "Lele" Calo <emanuele.lele.calo@gmail.com>
 
   Based on Timely Watchface for Pebble [https://github.com/cynorg/PebbleTimely]

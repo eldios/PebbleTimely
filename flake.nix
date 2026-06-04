@@ -1,5 +1,5 @@
 {
-  description = "TimelyColor watchface for Pebble - SDK dev shell + host unit tests";
+  description = "TimelyNG watchface for Pebble - SDK dev shell + host unit tests";
 
   inputs = {
     pebble.url = "github:pebble-dev/pebble.nix";
