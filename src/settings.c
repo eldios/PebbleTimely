@@ -16,6 +16,8 @@ static persist s_settings = {
   .vibe_pat_connect = 0, // no vibe
   .strftime_format = "%Y-%m-%d",
   .track_battery = 0,
+  .theme = 1,       // Functional
+  .theme_mode = 1,  // Dark (matches the pre-theme look)
 };
 
 static persist_adv_settings s_adv = {

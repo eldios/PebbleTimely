@@ -19,6 +19,8 @@ typedef struct persist { // 18 bytes
   uint8_t vibe_pat_connect;       // vibration pattern for connect
   char *strftime_format;          // custom date_format string (date_format = 255)
   uint8_t track_battery;          // track battery information
+  uint8_t theme;                  // color theme id (see theme.h)
+  uint8_t theme_mode;             // 0 light, 1 dark, 2 auto (dark at night)
 } __attribute__((__packed__)) persist;
 
 typedef struct persist_adv_settings { // 243 bytes
