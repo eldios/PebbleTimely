@@ -4,3 +4,6 @@ build
 pebble-screenshot*
 .*.swp
 .direnv
+
+# Local-only workflow artifacts (brainstorming specs / plans)
+docs/superpowers/
