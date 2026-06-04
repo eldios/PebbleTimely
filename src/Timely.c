@@ -4,6 +4,7 @@
 #include "timefmt.h"
 #include "layout.h"
 #include "calendar.h"
+#include "vibes.h"
 #define DEBUGLOG 0
 #define TRANSLOG 0
 #define CONFIG_VERSION "2.6"
@@ -1250,19 +1251,9 @@ static void set_unifont() {
 bool period_check(uint8_t start_incr, uint8_t stop_incr, bool retval_on_equal) {
   // takes two periods (uint8_t 0-144) in 10 minute increments, and returns whether the current time falls inside them.
   // periods are fully inclusive, presently
-  if (start_incr == stop_incr) { return retval_on_equal; }
-  bool inside_period = false;
   uint8_t current_min_incr = (currentTime->tm_min - (currentTime->tm_min%10))/10;
   uint8_t current_incr = currentTime->tm_hour * 6 + current_min_incr;
-  if (start_incr > stop_incr) { // period crosses midnight of the day
-    if (current_incr >= start_incr || current_incr <= stop_incr) {
-      inside_period = true;
-    }
-  } else { // period occurs within a single day
-    if (current_incr >= start_incr && current_incr <= stop_incr) {
-      inside_period = true;
-    }
-  }
+  bool inside_period = period_contains(start_incr, stop_incr, current_incr, retval_on_equal);
   if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Period Check... %d <= %d <= %d == %d*", start_incr, current_incr, stop_incr, (int)inside_period); }
   return inside_period;
 }

@@ -67,14 +67,17 @@
             cp ${./src/layout.h} src/layout.h
             cp ${./src/calendar.c} src/calendar.c
             cp ${./src/calendar.h} src/calendar.h
+            cp ${./src/vibes.c} src/vibes.c
+            cp ${./src/vibes.h} src/vibes.h
             cp ${./tests/utest.h} tests/utest.h
             cp ${./tests/test_main.c} tests/test_main.c
             cp ${./tests/test_timefmt.c} tests/test_timefmt.c
             cp ${./tests/test_layout.c} tests/test_layout.c
             cp ${./tests/test_calendar.c} tests/test_calendar.c
+            cp ${./tests/test_vibes.c} tests/test_vibes.c
             cc -I src -I tests -Wall -Wextra -std=c11 \
-              tests/test_main.c tests/test_timefmt.c tests/test_layout.c tests/test_calendar.c \
-              src/timefmt.c src/layout.c src/calendar.c -o test_suite
+              tests/test_main.c tests/test_timefmt.c tests/test_layout.c tests/test_calendar.c tests/test_vibes.c \
+              src/timefmt.c src/layout.c src/calendar.c src/vibes.c -o test_suite
             ./test_suite
             touch $out
           '';
