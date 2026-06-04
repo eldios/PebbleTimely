@@ -7,7 +7,7 @@ cflags := "-I src -I tests -Wall -Wextra -std=c11"
 build  := "build"
 emu    := env_var_or_default("EMU", "emery")   # aplite|basalt|chalk|diorite|emery|flint
 shot   := build / ("screenshot-" + emu + ".png")
-test_src := "tests/*.c src/timefmt.c src/layout.c src/calendar.c src/vibes.c"
+test_src := "tests/*.c src/timefmt.c src/layout.c src/calendar.c src/vibes.c src/suntimes.c src/math.c"
 
 # list the available recipes
 default:

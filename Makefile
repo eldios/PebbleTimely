@@ -6,7 +6,7 @@ CC       ?= cc
 CFLAGS   ?= -I src -I tests -Wall -Wextra -std=c11
 BUILD    := build
 TEST_BIN := $(BUILD)/test_suite
-TEST_SRC := $(wildcard tests/*.c) src/timefmt.c src/layout.c src/calendar.c src/vibes.c
+TEST_SRC := $(wildcard tests/*.c) src/timefmt.c src/layout.c src/calendar.c src/vibes.c src/suntimes.c src/math.c
 
 # emulator platform: aplite | basalt | chalk | diorite | emery | flint
 EMU  ?= emery

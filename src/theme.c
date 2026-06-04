@@ -1,6 +1,8 @@
 #include "theme.h"
 #include "ui.h"        // window, currentTime
 #include "settings.h"  // settings_get()->theme / theme_mode
+#include "suntimes.h"
+#include "timefmt.h"  // TIMEZONE_UNINITIALIZED
 
 // Palettes: [theme][0=light, 1=dark]. Tune these via emulator screenshots.
 static const Palette PALETTES[THEME_COUNT][2] = {
@@ -18,11 +20,37 @@ static const Palette PALETTES[THEME_COUNT][2] = {
     { GColorOxfordBlue, GColorWhite, GColorChromeYellow, GColorBlack, GColorBrilliantRose, GColorRed, GColorDukeBlue } },
 };
 
+#ifndef PBL_PLATFORM_APLITE
+// Minimal "[-]int[.frac]" coordinate parser (Pebble libc lacks atof).
+static bool parse_coord(const char *s, float *out) {
+  if (!s || !s[0]) return false;
+  int sign = 1; const char *p = s;
+  if (*p == '-') { sign = -1; p++; } else if (*p == '+') { p++; }
+  long ip = 0; float frac = 0.0f, scale = 0.1f; bool any = false;
+  while (*p >= '0' && *p <= '9') { ip = ip * 10 + (*p - '0'); p++; any = true; }
+  if (*p == '.') { p++; while (*p >= '0' && *p <= '9') { frac += (*p - '0') * scale; scale *= 0.1f; p++; any = true; } }
+  if (!any) return false;
+  *out = sign * (ip + frac);
+  return true;
+}
+#endif
+
 static bool is_night(void) {
-  // Placeholder for AUTO mode: dark 19:00-06:59. Upgraded to sunset/sunrise next.
   if (!currentTime) return true;
-  int h = currentTime->tm_hour;
-  return (h >= 19 || h < 7);
+#ifndef PBL_PLATFORM_APLITE
+  // Sunset/sunrise from the configured weather location. Skipped on aplite,
+  // whose 24KB app budget can't afford the float trig; it uses the window below.
+  float lat, lon;
+  if (timezone_offset != TIMEZONE_UNINITIALIZED &&
+      parse_coord(adv_settings_get()->weather_lat, &lat) &&
+      parse_coord(adv_settings_get()->weather_lon, &lon)) {
+    float now = currentTime->tm_hour + currentTime->tm_min / 60.0f;
+    float tz = -timezone_offset / 4.0f; // stored as quarter-hours, inverted sign
+    return sun_is_night(lat, lon, currentTime->tm_yday, tz, now);
+  }
+#endif
+  // No location (or aplite): simple 19:00-06:59 night window.
+  return (currentTime->tm_hour >= 19 || currentTime->tm_hour < 7);
 }
 
 Palette theme_palette(void) {

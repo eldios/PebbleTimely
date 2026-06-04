@@ -68,7 +68,7 @@ AppTimer *bottom_toggle = NULL;
 static bool bluetooth_connected = false;
 // suppress vibration
 static bool vibe_suppression = true;
-static int8_t timezone_offset = TIMEZONE_UNINITIALIZED;
+int8_t timezone_offset = TIMEZONE_UNINITIALIZED;
 struct tm *currentTime;
 static int8_t seconds_shown = 0;
 static bool dnd_period_active = false;
