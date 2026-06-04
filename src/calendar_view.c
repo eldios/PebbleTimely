@@ -98,7 +98,11 @@ static void calendar_render(Layer *me, GContext* ctx) {
         // draw the cell text
         char date_text[3];
         snprintf(date_text, sizeof(date_text), "%d", calendar[col + 7 * (row - 1)]);
-        graphics_draw_text(ctx, date_text, current, GRect(CAL_WIDTH * col + CAL_LEFT, CAL_HEIGHT * week - CAL_GAP + font_vert_offset, CAL_WIDTH, CAL_HEIGHT), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL); 
+        // vertically center the number in its cell (Pebble top-aligns text)
+        GSize ts = graphics_text_layout_get_content_size(date_text, current,
+                     GRect(0, 0, CAL_WIDTH, CAL_HEIGHT), GTextOverflowModeWordWrap, GTextAlignmentCenter);
+        int ty = CAL_HEIGHT * week + (CAL_HEIGHT - CAL_GAP - ts.h) / 2;
+        graphics_draw_text(ctx, date_text, current, GRect(CAL_WIDTH * col + CAL_LEFT, ty, CAL_WIDTH, CAL_HEIGHT), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
         if ( row == specialRow && col == specialDay) {
           setColors(ctx);
