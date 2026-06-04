@@ -51,6 +51,10 @@ static BitmapLayer *bmp_charging_layer;
 static GBitmap *image_charging_icon;
 static GBitmap *image_hourvibe_icon;
 static GBitmap *image_dnd_icon;
+static BitmapLayer *bmp_phone_layer;   // phone icon next to the phone-battery readout
+static GBitmap *image_phone_icon;
+static BitmapLayer *bmp_watch_layer;   // watch icon next to the watch battery
+static GBitmap *image_watch_icon;
 static TextLayer *text_connection_layer;
 static TextLayer *text_battery_layer;
 
@@ -631,7 +635,7 @@ void position_connection_layer() {
   } else { // Standard font
     connection_vert_offset = 0;
   }
-  layer_set_frame( text_layer_get_layer(text_connection_layer), GRect(20+STAT_BT_ICON_LEFT, connection_vert_offset, 72, 22) );
+  layer_set_frame( text_layer_get_layer(text_connection_layer), GRect(36, connection_vert_offset, 44, 22) );
 }
 
 void position_date_layer() {
@@ -901,26 +905,20 @@ static void battery_status_send(void *data) {
 
 void set_status_charging_icon() {
   // this icon shows either DND, hourly vibration, or charging...
+  bool chrg_shown = true;
   if (battery_charging) { // charging
-    layer_set_hidden(bitmap_layer_get_layer(bmp_charging_layer), false);
     bitmap_layer_set_bitmap(bmp_charging_layer, image_charging_icon);
-  } else { // not charging
-    if (dnd_period_active) {
-      layer_set_hidden(bitmap_layer_get_layer(bmp_charging_layer), false);
-      bitmap_layer_set_bitmap(bmp_charging_layer, image_dnd_icon);
-    } else {
-      if (battery_plugged) { // plugged but not charging = charging complete...
-        layer_set_hidden(bitmap_layer_get_layer(bmp_charging_layer), true);
-      } else { // normal wear
-        if (settings_get()->vibe_hour && vibe_period_active) {
-          layer_set_hidden(bitmap_layer_get_layer(bmp_charging_layer), false);
-          bitmap_layer_set_bitmap(bmp_charging_layer, image_hourvibe_icon);
-        } else {
-          layer_set_hidden(bitmap_layer_get_layer(bmp_charging_layer), true);
-        }
-      }
-    }
+  } else if (dnd_period_active) {
+    bitmap_layer_set_bitmap(bmp_charging_layer, image_dnd_icon);
+  } else if (!battery_plugged && settings_get()->vibe_hour && vibe_period_active) {
+    bitmap_layer_set_bitmap(bmp_charging_layer, image_hourvibe_icon);
+  } else { // plugged-but-full, or normal wear: nothing to show
+    chrg_shown = false;
   }
+  layer_set_hidden(bitmap_layer_get_layer(bmp_charging_layer), !chrg_shown);
+  // The charging slot sits on top of the watch icon's spot; hide the watch icon
+  // while the slot is in use so they don't overlap.
+  if (bmp_watch_layer) { layer_set_hidden(bitmap_layer_get_layer(bmp_watch_layer), chrg_shown); }
 }
 
 static void toggle_slot_bottom(void *data) {
@@ -1006,15 +1004,16 @@ void generate_vibe(uint32_t vibe_pattern_number) {
   }
 }
 
-// Connection text area doubles as the phone-battery readout: when connected and
-// the phone has reported its level, show "Ph NN%"; otherwise the link status.
+// Phone-battery readout next to the phone icon. The Bluetooth icon already
+// conveys the link state, so this shows the phone's level (or -- when unknown /
+// disconnected) rather than a "Linked"/"NOLINK" word.
 void set_connection_text(void) {
   if (bluetooth_connected && phone_battery_percent >= 0) {
-    snprintf(connection_text_buf, sizeof(connection_text_buf), "Ph %d%%", phone_battery_percent);
-    text_layer_set_text(text_connection_layer, connection_text_buf);
+    snprintf(connection_text_buf, sizeof(connection_text_buf), "%d%%", phone_battery_percent);
   } else {
-    text_layer_set_text(text_connection_layer, bluetooth_connected ? lang_gen_get()->statuses[0] : lang_gen_get()->statuses[1]);
+    snprintf(connection_text_buf, sizeof(connection_text_buf), "--");
   }
+  text_layer_set_text(text_connection_layer, connection_text_buf);
 }
 
 void update_connection() {
@@ -1072,8 +1071,12 @@ static void apply_palette(void) {
   tint_icon(image_charging_icon, fg);
   tint_icon(image_hourvibe_icon, fg);
   tint_icon(image_dnd_icon, fg);
+  tint_icon(image_phone_icon, fg);
+  tint_icon(image_watch_icon, fg);
   if (bmp_connection_layer) { layer_mark_dirty(bitmap_layer_get_layer(bmp_connection_layer)); }
   if (bmp_charging_layer)   { layer_mark_dirty(bitmap_layer_get_layer(bmp_charging_layer)); }
+  if (bmp_phone_layer)      { layer_mark_dirty(bitmap_layer_get_layer(bmp_phone_layer)); }
+  if (bmp_watch_layer)      { layer_mark_dirty(bitmap_layer_get_layer(bmp_watch_layer)); }
 #endif
 }
 
@@ -1202,6 +1205,20 @@ static void window_load(Window *window) {
   image_hourvibe_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_HOURVIBE_ICON);
   image_dnd_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_DONOTDISTURB_ICON);
 
+  // Small icons that label the two battery readouts: phone (left, by its %) and
+  // watch (right, by the watch battery).
+  image_phone_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_PHONE_ICON);
+  bmp_phone_layer = bitmap_layer_create( GRect(18, 4, 16, 16) );
+  bitmap_layer_set_compositing_mode(bmp_phone_layer, GCompOpSet);
+  bitmap_layer_set_bitmap(bmp_phone_layer, image_phone_icon);
+  layer_add_child(statusbar, bitmap_layer_get_layer(bmp_phone_layer));
+
+  image_watch_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_WATCH_ICON);
+  bmp_watch_layer = bitmap_layer_create( GRect(STAT_BATT_LEFT - 18, 4, 16, 16) );
+  bitmap_layer_set_compositing_mode(bmp_watch_layer, GCompOpSet);
+  bitmap_layer_set_bitmap(bmp_watch_layer, image_watch_icon);
+  layer_add_child(statusbar, bitmap_layer_get_layer(bmp_watch_layer));
+
   dnd_period_check();
   hourvibe_period_check();
   set_status_charging_icon();
@@ -1320,6 +1337,10 @@ static void window_unload(Window *window) {
   gbitmap_destroy(image_charging_icon);
   gbitmap_destroy(image_hourvibe_icon);
   gbitmap_destroy(image_dnd_icon);
+  bitmap_layer_destroy(bmp_phone_layer);
+  bitmap_layer_destroy(bmp_watch_layer);
+  gbitmap_destroy(image_phone_icon);
+  gbitmap_destroy(image_watch_icon);
   layer_destroy(slot_bot);
   layer_destroy(slot_top);
   layer_destroy(statusbar);

@@ -53,6 +53,16 @@
         },
         {
           "type": "png",
+          "name": "IMAGE_WATCH_ICON",
+          "file": "images/watch_16.png"
+        },
+        {
+          "type": "png",
+          "name": "IMAGE_PHONE_ICON",
+          "file": "images/phone_16.png"
+        },
+        {
+          "type": "png",
           "name": "IMAGE_HOURVIBE_ICON",
           "file": "images/hourvibe_20_20.png"
         },
