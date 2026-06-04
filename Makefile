@@ -5,7 +5,7 @@ CFLAGS   ?= -I src -I tests -Wall -Wextra -std=c11
 BUILD    := build
 TEST_BIN := $(BUILD)/test_suite
 # All test files + the pure (Pebble-free) modules under test.
-TEST_SRC := $(wildcard tests/*.c) src/timefmt.c src/layout.c
+TEST_SRC := $(wildcard tests/*.c) src/timefmt.c src/layout.c src/calendar.c
 
 .PHONY: test test-xml clean
 

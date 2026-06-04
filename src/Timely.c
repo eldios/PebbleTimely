@@ -3,6 +3,7 @@
 #include "effect_layer.h"
 #include "timefmt.h"
 #include "layout.h"
+#include "calendar.h"
 #define DEBUGLOG 0
 #define TRANSLOG 0
 #define CONFIG_VERSION "2.6"
@@ -409,100 +410,15 @@ void splash_layer_update_callback(Layer *me, GContext* ctx) {
 void calendar_layer_update_callback(Layer *me, GContext* ctx) {
     (void)me;
 
-    int mon = currentTime->tm_mon;
-    int year = currentTime->tm_year + 1900;
-    int daysThisMonth = daysInMonth(mon, year);
-    int specialDay = currentTime->tm_wday - settings.dayOfWeekOffset; // specialDay is the column [0-6] which holds the current day
-    /* We're going to build an array to hold the dates to be shown in the calendar.
-     *
-     * There are five 'parts' we'll calculate for this (though since we only display 3 weeks, we'll only ever see at most 4 of them)
-     *
-     *   daysVisPrevMonth = days from the previous month that are visible
-     *   daysPriorToToday = days before today (including any days from previous month)
-     *   ( today )
-     *   daysAfterToday   = days after today (including any days from next month)
-     *   daysVisNextMonth = days from the following month that are visible
-     *
-     *  daysPriorToToday + 1 + daysAfterToday = 21, since we display exactly 3 weeks.
-     */
-    int show_last = 1; // number of previous weeks to show 0-2
-    int show_next = 1; // number of future weeks to show 0-2
-    switch ( adv_settings.week_pattern ) {
-      case 0:
-        break;
-      case 1:
-        show_last = 2; show_next = 0;
-        break;
-      case 2:
-        show_last = 0; show_next = 2;
-        break;
-/* FIXME: not presently implemented to support this... need to calculate weeks and adjust how we do 'rows' below...
-      case 3:
-        show_last = 1; show_next = 0;
-        break;
-      case 4:
-        show_last = 0; show_next = 1;
-        break;
-      case 5:
-        show_last = 0; show_next = 0;
-        break;
-*/
-    }
-
-    int calendar[21];
-    int cellNum = 0;   // address for current day table cell: 0-20
-    int daysVisPrevMonth = 0;
-    int daysVisNextMonth = 0;
-    int daysPriorToToday = specialDay; // just instantiating, not final value
-    int daysAfterToday   = (6 - specialDay) % 7; // just instantiating, not final value
-
-    // tm_wday is based on Sunday being the startOfWeek, but Sunday may not be our startOfWeek.
-    if (currentTime->tm_wday < settings.dayOfWeekOffset) { 
-        daysPriorToToday += 7 * (show_last+1); // we're <7, so in the 'first' week due to startOfWeek offset - 'add a week' before this one
-        specialDay += 7;
-    } else {
-      daysPriorToToday += 7 * show_last; // 0 = unchanged
-    }
-    daysAfterToday += 7 * show_next; // 0 = unchanged
-
-    if ( daysPriorToToday >= currentTime->tm_mday ) {
-      // We're showing more days before today than exist this month
-      int daysInPrevMonth = daysInMonth(mon - 1,year); // year only matters for February, which will be the same 'from' March
-
-      // Number of days we'll show from the previous month
-      daysVisPrevMonth = daysPriorToToday - currentTime->tm_mday + 1;
-
-      for (int i = 0; i < daysVisPrevMonth; i++, cellNum++ ) {
-        calendar[cellNum] = daysInPrevMonth + i - daysVisPrevMonth + 1;
-      }
-    }
-
-    // optimization: instantiate i to a hot mess, since the first day we show this month may not be the 1st of the month
-    int firstDayShownThisMonth = daysVisPrevMonth + currentTime->tm_mday - daysPriorToToday;
-    for (int i = firstDayShownThisMonth; i < currentTime->tm_mday; i++, cellNum++ ) {
-      calendar[cellNum] = i;
-    }
-
-    //int currentDay = cellNum; // the current day... we'll style this special
-    calendar[cellNum] = currentTime->tm_mday;
-    cellNum++;
-
-    if ( currentTime->tm_mday + daysAfterToday > daysThisMonth ) {
-      daysVisNextMonth = currentTime->tm_mday + daysAfterToday - daysThisMonth;
-    }
-
-    // add the days after today until the end of the month/next week, to our array...
-    int daysLeftThisMonth = daysAfterToday - daysVisNextMonth;
-    for (int i = 0; i < daysLeftThisMonth; i++, cellNum++ ) {
-      calendar[cellNum] = i + currentTime->tm_mday + 1;
-    }
-
-    // add any days in the next month to our array...
-    for (int i = 0; i < daysVisNextMonth; i++, cellNum++ ) {
-      calendar[cellNum] = i + 1;
-    }
-
-    if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Calendar - DOWO: %d, wday: %d, sDay: %d, dVPM: %d, dVNM: %d, dPTT: %d, dAT: %d", settings.dayOfWeekOffset, currentTime->tm_wday, specialDay, daysVisPrevMonth, daysVisNextMonth, daysPriorToToday, daysAfterToday); }
+    CalGrid grid = calendar_build(currentTime->tm_year + 1900,
+                                  currentTime->tm_mon,
+                                  currentTime->tm_mday,
+                                  currentTime->tm_wday,
+                                  settings.dayOfWeekOffset,
+                                  adv_settings.week_pattern);
+    int *calendar = grid.days;
+    int specialDay = grid.special_col;
+    if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Calendar - sCol: %d, sRow: %d", grid.special_col, grid.special_row); }
 
 // ---------------------------
 // Now that we've calculated which days go where, we'll move on to the display logic.
@@ -558,7 +474,7 @@ void calendar_layer_update_callback(Layer *me, GContext* ctx) {
 
     // draw the individual calendar rows/columns
     int week = 0;
-    int specialRow = show_last+1;
+    int specialRow = grid.special_row;
     
     for (int row = 1; row <= 3; row++) {
       week++;

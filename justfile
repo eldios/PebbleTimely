@@ -4,7 +4,7 @@ cc       := env_var_or_default("CC", "cc")
 cflags   := "-I src -I tests -Wall -Wextra -std=c11"
 build    := "build"
 test_bin := build / "test_suite"
-test_src := "tests/*.c src/timefmt.c src/layout.c"
+test_src := "tests/*.c src/timefmt.c src/layout.c src/calendar.c"
 
 # build + run the unit-test suite
 test: build-tests
