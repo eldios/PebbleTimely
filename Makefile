@@ -12,11 +12,12 @@ TEST_SRC := $(wildcard tests/*.c) src/timefmt.c src/layout.c src/calendar.c src/
 EMU  ?= emery
 SHOT ?= $(BUILD)/screenshot-$(EMU).png
 
-.PHONY: help test test-xml test-clean build install run shot logs kill app-clean sdk
+.PHONY: help test test-xml test-clean build install run shot config logs kill app-clean sdk
 
 help:
 	@echo "Host tests (nix develop .#test):  test  test-xml  test-clean"
-	@echo "Pebble (nix develop):             build  run  shot  logs  kill  app-clean  sdk"
+	@echo "Pebble (nix develop):             build  run  config  shot  logs  kill  app-clean  sdk"
+	@echo "Guided picker (just):             just menu   (or: just config)"
 	@echo "Vars: EMU=$(EMU)  SHOT=$(SHOT)"
 
 ## ---- host unit tests ----
@@ -39,6 +40,10 @@ build:
 
 run install: build          ## build + (re)install on the emulator
 	pebble install --emulator $(EMU)
+
+config: build               ## build + install + open the Clay config page (EMU=$(EMU); use `just menu` for a picker)
+	pebble install --emulator $(EMU)
+	pebble emu-app-config --emulator $(EMU)
 
 shot: build                 ## build + install + grab a screenshot to $(SHOT)
 	pebble install --emulator $(EMU)

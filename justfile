@@ -58,3 +58,50 @@ app-clean:
 # install the Pebble SDK (first-time setup)
 sdk:
     pebble sdk install latest
+
+## ---- guided (interactive; uses gum for input, falls back without it) ----
+
+# print a chosen emulator platform ($EMU wins, else gum picker, else emery)
+_pick-emu:
+    #!/usr/bin/env bash
+    if [ -n "${EMU:-}" ]; then echo "$EMU"
+    elif command -v gum >/dev/null 2>&1; then
+        gum choose --header "Emulator platform:" emery flint basalt diorite aplite
+    else echo emery; fi
+
+# build, install, and open the Clay config page to test themes (guided)
+config:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    command -v pebble >/dev/null 2>&1 || { echo "Run inside 'nix develop' first."; exit 1; }
+    p="$(just _pick-emu)"
+    echo "▸ $p: build → install → config"
+    pebble build
+    pebble install --emulator "$p"
+    echo "Config page opening for $p — pick a theme/mode and press Save; the watchface updates live."
+    pebble emu-app-config --emulator "$p"
+
+# one guided command: choose an action (and platform), then run it
+menu:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    command -v pebble >/dev/null 2>&1 || { echo "Run inside 'nix develop' first."; exit 1; }
+    if ! command -v gum >/dev/null 2>&1; then
+        echo "gum not found — use a direct recipe: just run | config | shot | logs | test"; exit 1
+    fi
+    action=$(gum choose --header "What do you want to do?" \
+        "Run on emulator" "Configure themes" "Screenshot" "Tail logs" "Host tests" "Install to watch")
+    case "$action" in
+      "Host tests") exec just test ;;
+      "Install to watch")
+        ip=$(gum input --placeholder "phone IP (Pebble app → Developer Connection)")
+        pebble build && pebble install --phone "$ip"; exit 0 ;;
+    esac
+    p=$(gum choose --header "Emulator platform:" emery flint basalt diorite aplite)
+    pebble build
+    case "$action" in
+      "Run on emulator")    pebble install --emulator "$p" ;;
+      "Configure themes")   pebble install --emulator "$p"; pebble emu-app-config --emulator "$p" ;;
+      "Screenshot")         pebble install --emulator "$p"; sleep 4; pebble screenshot "{{build}}/screenshot-$p.png" --no-open; echo "saved {{build}}/screenshot-$p.png" ;;
+      "Tail logs")          pebble logs --emulator "$p" ;;
+    esac

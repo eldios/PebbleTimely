@@ -39,6 +39,7 @@
             packages = [
               pkgs.just
               pkgs.gnumake
+              pkgs.gum # interactive prompts for the guided `just` recipes
             ];
             # This 2013 codebase under the modern arm-none-eabi gcc 14 trips many
             # warnings the SDK promotes to errors. The SDK's own suppressions do

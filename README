@@ -37,6 +37,11 @@ the watch's PebbleKit JS, so it needs no external server. Edit src/js/config.js
 to change the page; src/js/app.js coerces the select values to integers before
 sending them to the watch.
 
+To try it on an emulator: "just config" (guided platform picker via gum) or
+"make config EMU=emery" builds, installs, and opens the config page so you can
+pick a theme and see the watchface update. "just menu" is a guided front-end to
+all the emulator/test tasks.
+
 Tests (pure date/timezone logic, host-compiled, no Pebble SDK)
 
   nix flake check                  # reproducible
