@@ -715,7 +715,7 @@ void battery_layer_update_callback(Layer *me, GContext* ctx) {
 
 static void request_weather(void *data) {
   if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Requesting Weather [%d/%d]", weather_state()->failures, weather_state()->requests); }
-  strncpy(weather_state()->condition, "h", sizeof(weather_state()->condition)-1); // h = updating 'cloud' icon
+  weather_state()->condition[0] = 'h'; weather_state()->condition[1] = '\0'; // h = updating 'cloud' icon
   weather_mark_dirty(); // update UI element to indicate we're fetching weather...
   DictionaryIterator *iter;
   AppMessageResult result = app_message_outbox_begin(&iter);
@@ -902,6 +902,7 @@ void generate_vibe(uint32_t vibe_pattern_number) {
       .durations = (uint32_t []) {200, 100, 200, 100, 200},
       .num_segments = 5
     } );
+    break;
   case 4: // Long
     vibes_long_pulse();
     break;
@@ -1300,11 +1301,14 @@ void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed)
 void handle_second_tick(struct tm *tick_time, TimeUnits units_changed)
 {
   *currentTime = *tick_time;
-  // update the seconds layer(s)...
-  if (settings_get()->show_week == 6) {
+  // update the seconds layer(s)... (9 == Seconds in the unified slot menu)
+  if (settings_get()->show_week == 9) {
     update_seconds_text(week_layer);
   }
-  if (settings_get()->show_am_pm == 6) {
+  if (settings_get()->show_day == 9) {
+    update_seconds_text(day_layer);
+  }
+  if (settings_get()->show_am_pm == 9) {
     update_seconds_text(ampm_layer);
   }
   // redraw everything else if the minute changes...
@@ -1314,8 +1318,9 @@ void handle_second_tick(struct tm *tick_time, TimeUnits units_changed)
 }
 
 static int need_second_tick_handler(void) {
-  if ((settings_get()->show_week == 6) || (settings_get()->show_am_pm == 6)) { return 1; }
-  return 0; 
+  // 9 == Seconds in the unified slot menu
+  if ((settings_get()->show_week == 9) || (settings_get()->show_day == 9) || (settings_get()->show_am_pm == 9)) { return 1; }
+  return 0;
 }
 
 static void switch_tick_handler(void) {

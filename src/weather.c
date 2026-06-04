@@ -18,14 +18,15 @@ static Layer *s_weather_layer;
 
 static void weather_render(Layer *me, GContext *ctx) {
   (void)me;
-  static char temp_current[] = "N/A  ";
-  static char cond_current[] = "0";
+  static char temp_current[12] = "N/A";
+  static char cond_current[4] = "0";
   if (weather_state()->current < 900) {
     snprintf(temp_current, sizeof(temp_current), "%d°", weather_state()->current);
   } else {
     snprintf(temp_current, sizeof(temp_current), "N/A");
   }
-  snprintf(cond_current, sizeof(cond_current), "%s", weather_state()->condition);
+  cond_current[0] = weather_state()->condition[0]; // single climacons glyph
+  cond_current[1] = '\0';
 
   setColors(ctx);
   graphics_draw_text(ctx, cond_current, climacons, GRect(2,16,34,34), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
