@@ -187,7 +187,8 @@ static int DEVICE_HEIGHT = 168;
 static int LAYOUT_STAT = 0;
 static int LAYOUT_SLOT_TOP = 24;
 static int LAYOUT_SLOT_BOT = 96;
-static int LAYOUT_SLOT_HEIGHT = 72;
+static int LAYOUT_SLOT_HEIGHT = 72;     // top slot (time/date) height
+static int LAYOUT_SLOT_BOT_HEIGHT = 72; // bottom slot (calendar) height — differs from the top once capped
 static int STAT_BATT_LEFT = 96; // right-aligned at runtime
 #define STAT_BATT_TOP         4
 #define STAT_BATT_WIDTH      44 // should be divisible by 10, after subtracting 4 (2 pixels/side for the 'border')
@@ -220,6 +221,7 @@ static void compute_layout(int w, int h) {
   LAYOUT_SLOT_TOP = L.slot_top.y;
   LAYOUT_SLOT_BOT = L.slot_bot.y;
   LAYOUT_SLOT_HEIGHT = L.slot_top.h;
+  LAYOUT_SLOT_BOT_HEIGHT = L.slot_bot.h;
   STAT_BATT_LEFT = L.battery.x;
   STAT_CHRG_ICON_LEFT = L.chrg_icon_x;
   REL_CLOCK_DATE_LEFT = L.clock_date.x;
@@ -585,7 +587,7 @@ void position_day_layer() {
   // Middle complication: confined to the centre third so it never overlaps the
   // left (week) and right (am/pm) complications.
   int third = DEVICE_WIDTH / 3;
-  layer_set_frame( text_layer_get_layer(day_layer), GRect(third, REL_CLOCK_SUBTEXT_TOP + day_vert_offset, third, REL_CLOCK_DATE_HEIGHT) );
+  layer_set_frame( text_layer_get_layer(day_layer), GRect(third, REL_CLOCK_SUBTEXT_TOP + day_vert_offset, third, 22) );
 }
 
 void position_time_layer() {
@@ -1099,7 +1101,7 @@ static void window_load(Window *window) {
   layer_add_child(window_layer, slot_top);
   GRect slot_top_bounds = layer_get_bounds(slot_top);
 
-  slot_bot = layer_create(GRect(0,LAYOUT_SLOT_BOT,DEVICE_WIDTH,LAYOUT_SLOT_HEIGHT));
+  slot_bot = layer_create(GRect(0,LAYOUT_SLOT_BOT,DEVICE_WIDTH,LAYOUT_SLOT_BOT_HEIGHT));
   layer_set_update_proc(slot_bot, slot_bot_layer_update_callback);
   layer_add_child(window_layer, slot_bot);
   GRect slot_bot_bounds = layer_get_bounds(slot_bot);
@@ -1151,23 +1153,23 @@ static void window_load(Window *window) {
   update_time_text();
   layer_add_child(datetime_layer, text_layer_get_layer(time_layer));
 
-  week_layer = text_layer_create( GRect(2, REL_CLOCK_SUBTEXT_TOP, DEVICE_WIDTH / 3 - 2, 18) ); // left third
-  set_layer_attr_sfont(week_layer, FONT_KEY_GOTHIC_14, GTextAlignmentLeft);
+  week_layer = text_layer_create( GRect(2, REL_CLOCK_SUBTEXT_TOP, DEVICE_WIDTH / 3 - 2, 22) ); // left third
+  set_layer_attr_sfont(week_layer, FONT_KEY_GOTHIC_18, GTextAlignmentLeft);
   layer_add_child(datetime_layer, text_layer_get_layer(week_layer));
   if ( settings_get()->show_week == 0 ) {
     layer_set_hidden(text_layer_get_layer(week_layer), true);
   }
 
-  day_layer = text_layer_create( GRect(4, REL_CLOCK_SUBTEXT_TOP, REL_CLOCK_DATE_WIDTH, 18) ); // see position_day_layer()
-  set_layer_attr_sfont(day_layer, FONT_KEY_GOTHIC_14, GTextAlignmentCenter);
+  day_layer = text_layer_create( GRect(4, REL_CLOCK_SUBTEXT_TOP, REL_CLOCK_DATE_WIDTH, 22) ); // see position_day_layer()
+  set_layer_attr_sfont(day_layer, FONT_KEY_GOTHIC_18, GTextAlignmentCenter);
   position_day_layer(); // depends on font/language
   layer_add_child(datetime_layer, text_layer_get_layer(day_layer));
   if ( settings_get()->show_day == 0 ) {
     layer_set_hidden(text_layer_get_layer(day_layer), true);
   }
 
-  ampm_layer = text_layer_create( GRect(DEVICE_WIDTH - DEVICE_WIDTH / 3, REL_CLOCK_SUBTEXT_TOP, DEVICE_WIDTH / 3 - 2, 18) ); // right third
-  set_layer_attr_sfont(ampm_layer, FONT_KEY_GOTHIC_14, GTextAlignmentRight);
+  ampm_layer = text_layer_create( GRect(DEVICE_WIDTH - DEVICE_WIDTH / 3, REL_CLOCK_SUBTEXT_TOP, DEVICE_WIDTH / 3 - 2, 22) ); // right third
+  set_layer_attr_sfont(ampm_layer, FONT_KEY_GOTHIC_18, GTextAlignmentRight);
   layer_add_child(datetime_layer, text_layer_get_layer(ampm_layer));
   if ( settings_get()->show_am_pm == 0 ) {
     layer_set_hidden(text_layer_get_layer(ampm_layer), true);

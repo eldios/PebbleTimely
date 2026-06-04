@@ -17,10 +17,11 @@ UTEST(layout, emery_200x228_fills_screen) {
   ASSERT_EQ(24,  L.statusbar.h);          // fixed
   ASSERT_EQ(200, L.statusbar.w);
   ASSERT_EQ(24,  L.slot_top.y);           // right after statusbar
-  ASSERT_EQ(102, L.slot_top.h);           // (228-24)/2
-  ASSERT_EQ(126, L.slot_bot.y);           // 24+102
+  ASSERT_EQ(80,  L.slot_top.h);           // capped: tall screens give the extra to the calendar
+  ASSERT_EQ(104, L.slot_bot.y);           // 24+80
+  ASSERT_EQ(124, L.slot_bot.h);           // 228-24-80 (calendar gets the rest)
   ASSERT_EQ(28,  L.cal_cell_w);           // (200-4)/7
-  ASSERT_EQ(25,  L.cal_cell_h);           // 102/4
+  ASSERT_EQ(31,  L.cal_cell_h);           // 124/4
   ASSERT_EQ(152, L.battery.x);            // 200-48
 }
 

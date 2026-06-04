@@ -12,7 +12,11 @@
 TimelyLayout layout_compute(int width, int height) {
   TimelyLayout L;
   int body = height - STATUSBAR_H;
+  // Date/time/complications need a roughly fixed height (the clock font does not
+  // scale); cap the top slot so taller screens give their extra height to the
+  // calendar (the protagonist) instead of leaving a dead band under the time.
   int slot_h = body / 2;
+  if (slot_h > 80) { slot_h = 80; }
 
   L.statusbar = (LayoutRect){ 0, 0, width, STATUSBAR_H };
   L.slot_top  = (LayoutRect){ 0, STATUSBAR_H, width, slot_h };
@@ -26,7 +30,7 @@ TimelyLayout layout_compute(int width, int height) {
   // clock/date inside slot_top (proportional, mirrors REL_CLOCK_* at 144x168)
   L.clock_date = (LayoutRect){ 2, 0, width - 4, (slot_h * 30) / 72 };
   L.clock_time = (LayoutRect){ 0, (slot_h * 7) / 72, width - 2, (slot_h * 60) / 72 };
-  L.subtext_top = (slot_h * 56) / 72;
+  L.subtext_top = slot_h - 22; // complication row sits flush above the calendar (22px tall)
 
   // calendar grid inside slot_bot: 7 columns spanning the width, 3 rows.
   L.cal_cols   = CAL_COLS;
