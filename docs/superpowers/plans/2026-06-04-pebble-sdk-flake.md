@@ -8,6 +8,16 @@
 
 **Tech Stack:** Nix flakes, flake-utils, pebble.nix (pebble-tool 5.x, arm-none-eabi 4.9.169, Pebble-patched QEMU, sdk-core-4.3).
 
+> **Revision 2026-06-04 — implemented as dev-shell-only.** Tasks 1–2's
+> `packages.default` / `buildPebbleApp` were dropped: the official Pebble guide
+> builds via the `pebble` CLI (not Nix), and `buildPebbleApp` is broken at
+> pebble.nix HEAD (`51f2a26` references the removed `python-libs.nix`). The
+> shipped `flake.nix` exposes only `devShells.default`. Task 4's reproducible
+> `nix build` is replaced by the official `pebble build` inside `nix develop`,
+> which was verified to compile the source (failing only on `-Werror`
+> `-Wformat-truncation` warnings in `src/Timely.c` — Phase 2 scope). See the
+> design doc's "Revision 2026-06-04" section.
+
 ---
 
 ### Task 1: Create `flake.nix`

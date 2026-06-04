@@ -1,9 +1,30 @@
 # Design: Pebble SDK flake + republish path for Timely watchface
 
 Date: 2026-06-04
-Status: approved (design), pending implementation
+Status: Phase 1 implemented (dev-shell-only — see Revision below)
 Scope of this spec: **Phase 1 — `flake.nix`**. Phases 2–3 are sketched for
 context and get their own spec/plan before implementation.
+
+## Revision 2026-06-04 — dev-shell-only
+
+The flake ships **only** `devShells.default` (pebble.nix `pebbleEnv`). The
+planned `packages.default` (`buildPebbleApp`) was dropped because (a) the
+official Pebble SDK guide (https://developer.repebble.com/sdk/) builds via the
+`pebble` CLI, not a Nix-native derivation, and (b) `buildPebbleApp` is broken at
+pebble.nix HEAD `51f2a26`: its `flake.nix` references the removed
+`derivations/pebble-tool/python-libs.nix`. Dropping it also removes the EOL
+python2 / `NIXPKGS_ALLOW_INSECURE` concern entirely (the dev shell is python3).
+
+Build/publish now follow the official flow inside `nix develop`:
+`pebble sdk install latest` → `pebble build` (→ `build/Timely.pbw`) →
+`pebble install --emulator basalt` / `pebble login` + `pebble install
+--cloudpebble`.
+
+**Phase 1 verification (done):** `nix flake check` passes; the shell resolves
+`Pebble Tool v5.0.35 (active SDK v4.9.169)` and `arm-none-eabi-gcc`. Official
+`pebble build` runs end-to-end: it auto-installed the SDK and compiled the
+source, failing **only** on `-Werror` for two `-Wformat-truncation` warnings in
+`src/Timely.c` (lines 791, 823). SDK is functional; those warnings are Phase 2.
 
 ## Problem
 
