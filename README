@@ -27,20 +27,18 @@ Building (NixOS / Nix, official Pebble CLI flow)
   pebble install --emulator emery  # color emulator (or basalt / flint / ...)
   pebble login && pebble install --cloudpebble   # to a paired watch
 
-The PebbleKit JS dependency (@rebble/clay) is declared in package.json, so
-"pebble build" installs it automatically (npm); no manual step is needed.
-
 Configuration
 
-The settings screen is built with Clay (@rebble/clay) and rendered offline by
-the watch's PebbleKit JS, so it needs no external server. Edit src/js/config.js
-to change the page; src/js/app.js coerces the select values to integers before
-sending them to the watch.
+The settings screen is fully offline: no server, no CDN, no external host. On
+showConfiguration the watch's PebbleKit JS builds the page from src/js/config.js
+(the field spec) via src/js/configpage.js and hands it to the phone as a
+data:text/html URI; the page returns the chosen values via pebblejs://close#.
+Edit src/js/config.js to change the options.
 
 To try it on an emulator: "just config" (guided platform picker via gum) or
-"make config EMU=emery" builds, installs, and opens the config page so you can
-pick a theme and see the watchface update. "just menu" is a guided front-end to
-all the emulator/test tasks.
+"make config EMU=emery" builds, installs, and opens the page (rendered from a
+local file so the emulator can round-trip it) so you can pick a theme and see
+the watchface update. "just menu" is a guided front-end to all the test tasks.
 
 Tests (pure date/timezone logic, host-compiled, no Pebble SDK)
 

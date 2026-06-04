@@ -41,9 +41,10 @@ build:
 run install: build          ## build + (re)install on the emulator
 	pebble install --emulator $(EMU)
 
-config: build               ## build + install + open the Clay config page (EMU=$(EMU); use `just menu` for a picker)
+config: build               ## build + install + open the offline config page (EMU=$(EMU); use `just menu` for a picker)
 	pebble install --emulator $(EMU)
-	pebble emu-app-config --emulator $(EMU)
+	node tools/gen-config-html.js $(BUILD)/config.html
+	pebble emu-app-config --emulator $(EMU) --file $(BUILD)/config.html
 
 shot: build                 ## build + install + grab a screenshot to $(SHOT)
 	pebble install --emulator $(EMU)

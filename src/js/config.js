@@ -1,175 +1,49 @@
-// Clay configuration page for TimelyNG.
-// Select/radiogroup values are HTML strings; app.js coerces the integer-valued
-// ones to numbers before sending so the watch can read them as uint8.
+// Declarative spec for the offline settings page (see configpage.js).
+// Each field's `key` matches a messageKey in package.json; the watch reads the
+// value as a uint8, so option values and defaults are plain integers.
 
-var VIBE_PATTERNS = [
-  { label: 'None', value: '0' },
-  { label: '1x', value: '1' },
-  { label: '2x', value: '2' },
-  { label: '3x', value: '3' },
-  { label: 'Long', value: '4' },
-  { label: 'Min', value: '5' },
-  { label: 'Min 2', value: '6' },
-  { label: 'Ow', value: '7' }
+var VIBES = [
+  ['None', 0], ['1x', 1], ['2x', 2], ['3x', 3],
+  ['Long', 4], ['Min', 5], ['Min 2', 6], ['Ow', 7]
 ];
 
 module.exports = [
   {
-    type: 'heading',
-    defaultValue: 'TimelyNG',
-    size: 1
-  },
-  {
-    type: 'section',
-    items: [
-      { type: 'heading', defaultValue: 'Appearance' },
-      {
-        type: 'select',
-        messageKey: 'theme',
-        label: 'Theme',
-        defaultValue: '1',
-        options: [
-          { label: 'Mono', value: '0' },
-          { label: 'Functional', value: '1' },
-          { label: 'Minimal', value: '2' },
-          { label: 'Vibrant', value: '3' }
-        ]
-      },
-      {
-        type: 'select',
-        messageKey: 'theme_mode',
-        label: 'Mode',
-        description: 'Auto follows local sunset/sunrise.',
-        defaultValue: '1',
-        options: [
-          { label: 'Light', value: '0' },
-          { label: 'Dark', value: '1' },
-          { label: 'Auto', value: '2' }
-        ]
-      },
-      {
-        type: 'toggle',
-        messageKey: 'style_day_inv',
-        label: 'Highlight today',
-        defaultValue: true
-      },
-      {
-        type: 'toggle',
-        messageKey: 'style_grid',
-        label: 'Calendar grid background',
-        defaultValue: true
-      },
-      {
-        type: 'select',
-        messageKey: 'intl_dowo',
-        label: 'Start of week',
-        defaultValue: '0',
-        options: [
-          { label: 'Sunday', value: '0' },
-          { label: 'Monday', value: '1' },
-          { label: 'Tuesday', value: '2' },
-          { label: 'Wednesday', value: '3' },
-          { label: 'Thursday', value: '4' },
-          { label: 'Friday', value: '5' },
-          { label: 'Saturday', value: '6' }
-        ]
-      }
+    title: 'Appearance',
+    fields: [
+      { key: 'theme', label: 'Theme', type: 'select', def: 1,
+        options: [['Mono', 0], ['Functional', 1], ['Minimal', 2], ['Vibrant', 3]] },
+      { key: 'theme_mode', label: 'Mode', type: 'select', def: 1,
+        note: 'Auto follows local sunset/sunrise.',
+        options: [['Light', 0], ['Dark', 1], ['Auto', 2]] },
+      { key: 'style_day_inv', label: 'Highlight today', type: 'toggle', def: 1 },
+      { key: 'style_grid', label: 'Calendar grid background', type: 'toggle', def: 1 },
+      { key: 'intl_dowo', label: 'Start of week', type: 'select', def: 0,
+        options: [['Sunday', 0], ['Monday', 1], ['Tuesday', 2], ['Wednesday', 3],
+                  ['Thursday', 4], ['Friday', 5], ['Saturday', 6]] }
     ]
   },
   {
-    type: 'section',
-    items: [
-      { type: 'heading', defaultValue: 'Clock' },
-      {
-        type: 'select',
-        messageKey: 'intl_fmt_date',
-        label: 'Date format',
-        defaultValue: '0',
-        options: [
-          { label: 'MMMM DD, YYYY', value: '0' },
-          { label: 'DD.MM.YYYY', value: '1' }
-        ]
-      },
-      {
-        type: 'select',
-        messageKey: 'style_week',
-        label: 'Below time, left',
-        defaultValue: '0',
-        options: [
-          { label: '—', value: '0' },
-          { label: 'Week', value: '1' },
-          { label: 'Timezone', value: '2' },
-          { label: 'AM/PM', value: '3' }
-        ]
-      },
-      {
-        type: 'select',
-        messageKey: 'style_day',
-        label: 'Below time, middle',
-        defaultValue: '0',
-        options: [
-          { label: '—', value: '0' },
-          { label: 'Day', value: '1' },
-          { label: 'Month', value: '2' },
-          { label: 'Timezone', value: '3' },
-          { label: 'Week', value: '4' },
-          { label: 'AM/PM', value: '5' }
-        ]
-      },
-      {
-        type: 'select',
-        messageKey: 'style_am_pm',
-        label: 'Below time, right',
-        defaultValue: '0',
-        options: [
-          { label: '—', value: '0' },
-          { label: 'AM/PM', value: '1' },
-          { label: 'Timezone', value: '2' },
-          { label: 'Week', value: '3' }
-        ]
-      },
-      {
-        type: 'select',
-        messageKey: 'intl_fmt_week',
-        label: 'Week numbering',
-        defaultValue: '0',
-        options: [
-          { label: 'ISO 8601', value: '0' },
-          { label: 'Sun 1st of W1', value: '1' },
-          { label: 'Mon 1st of W1', value: '2' }
-        ]
-      }
+    title: 'Clock',
+    fields: [
+      { key: 'intl_fmt_date', label: 'Date format', type: 'select', def: 0,
+        options: [['MMMM DD, YYYY', 0], ['DD.MM.YYYY', 1]] },
+      { key: 'style_week', label: 'Below time, left', type: 'select', def: 0,
+        options: [['—', 0], ['Week', 1], ['Timezone', 2], ['AM/PM', 3]] },
+      { key: 'style_day', label: 'Below time, middle', type: 'select', def: 0,
+        options: [['—', 0], ['Day', 1], ['Month', 2], ['Timezone', 3], ['Week', 4], ['AM/PM', 5]] },
+      { key: 'style_am_pm', label: 'Below time, right', type: 'select', def: 0,
+        options: [['—', 0], ['AM/PM', 1], ['Timezone', 2], ['Week', 3]] },
+      { key: 'intl_fmt_week', label: 'Week numbering', type: 'select', def: 0,
+        options: [['ISO 8601', 0], ['Sun 1st of W1', 1], ['Mon 1st of W1', 2]] }
     ]
   },
   {
-    type: 'section',
-    items: [
-      { type: 'heading', defaultValue: 'Vibration' },
-      {
-        type: 'select',
-        messageKey: 'vibe_hour',
-        label: 'Hourly',
-        defaultValue: '0',
-        options: VIBE_PATTERNS
-      },
-      {
-        type: 'select',
-        messageKey: 'vibe_pat_disconnect',
-        label: 'On disconnect',
-        defaultValue: '2',
-        options: VIBE_PATTERNS
-      },
-      {
-        type: 'select',
-        messageKey: 'vibe_pat_connect',
-        label: 'On reconnect',
-        defaultValue: '0',
-        options: VIBE_PATTERNS
-      }
+    title: 'Vibration',
+    fields: [
+      { key: 'vibe_hour', label: 'Hourly', type: 'select', def: 0, options: VIBES },
+      { key: 'vibe_pat_disconnect', label: 'On disconnect', type: 'select', def: 2, options: VIBES },
+      { key: 'vibe_pat_connect', label: 'On reconnect', type: 'select', def: 0, options: VIBES }
     ]
-  },
-  {
-    type: 'submit',
-    defaultValue: 'Save'
   }
 ];

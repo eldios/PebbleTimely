@@ -1,8 +1,5 @@
-var Clay = require('@rebble/clay');
-var clayConfig = require('./config');
-// We render the page with Clay but handle the events ourselves so we can coerce
-// the string-typed select values to integers (the watch reads them as uint8).
-var clay = new Clay(clayConfig, null, { autoHandleEvents: false });
+var CONFIG_SPEC = require('./config');
+var buildConfigPage = require('./configpage');
 
 var CLIMACON = {
   'cloud'            : '!',
@@ -319,7 +316,11 @@ Pebble.addEventListener("ready", function (e) {
 });
 
 Pebble.addEventListener("showConfiguration", function () {
-    Pebble.openURL(clay.generateUrl());
+    var current = {};
+    try { current = JSON.parse(localStorage.getItem("timely_settings") || "{}"); } catch (err) {}
+    var html = buildConfigPage(CONFIG_SPEC, current);
+    // Self-contained page, no server: the watch hands the whole page to the phone.
+    Pebble.openURL("data:text/html," + encodeURIComponent(html));
 });
 
 function getWatchVersion() {
@@ -498,17 +499,12 @@ V = waning crescent 0.25 +
 }
 
 Pebble.addEventListener("webviewclosed", function (e) {
-    if (e && !e.response) { return; } // user cancelled
+    if (!e || !e.response) { return; } // user cancelled
 
-    var dict = clay.getSettings(e.response); // keyed by messageKey name
-    // Clay selects return their value as a string; the watch reads these keys as
-    // uint8, so coerce pure-integer strings to numbers. Genuine text values (none
-    // in the current page) are left untouched.
-    Object.keys(dict).forEach(function (k) {
-        if (typeof dict[k] === 'string' && /^-?\d+$/.test(dict[k])) {
-            dict[k] = parseInt(dict[k], 10);
-        }
-    });
+    // The page sends a JSON object keyed by message-key name with integer values.
+    var dict;
+    try { dict = JSON.parse(decodeURIComponent(e.response)); } catch (err) { return; }
+    localStorage.setItem("timely_settings", JSON.stringify(dict));
 
     Pebble.sendAppMessage(dict,
         function (e) {

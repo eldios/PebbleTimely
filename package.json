@@ -6,9 +6,6 @@
   "keywords": [
     "pebble-app"
   ],
-  "dependencies": {
-    "@rebble/clay": "^1.0.10"
-  },
   "pebble": {
     "sdkVersion": "3",
     "targetPlatforms": [

@@ -69,7 +69,7 @@ _pick-emu:
         gum choose --header "Emulator platform:" emery flint basalt diorite aplite
     else echo emery; fi
 
-# build, install, and open the Clay config page to test themes (guided)
+# build, install, and open the offline config page to test themes (guided)
 config:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -78,8 +78,11 @@ config:
     echo "▸ $p: build → install → config"
     pebble build
     pebble install --emulator "$p"
+    node tools/gen-config-html.js {{build}}/config.html
     echo "Config page opening for $p — pick a theme/mode and press Save; the watchface updates live."
-    pebble emu-app-config --emulator "$p"
+    # --file feeds the emulator the local page (it supplies return_to); on a real
+    # watch the same page is served offline via a data: URI from showConfiguration.
+    pebble emu-app-config --emulator "$p" --file {{build}}/config.html
 
 # one guided command: choose an action (and platform), then run it
 menu:
@@ -101,7 +104,7 @@ menu:
     pebble build
     case "$action" in
       "Run on emulator")    pebble install --emulator "$p" ;;
-      "Configure themes")   pebble install --emulator "$p"; pebble emu-app-config --emulator "$p" ;;
+      "Configure themes")   pebble install --emulator "$p"; node tools/gen-config-html.js "{{build}}/config.html"; pebble emu-app-config --emulator "$p" --file "{{build}}/config.html" ;;
       "Screenshot")         pebble install --emulator "$p"; sleep 4; pebble screenshot "{{build}}/screenshot-$p.png" --no-open; echo "saved {{build}}/screenshot-$p.png" ;;
       "Tail logs")          pebble logs --emulator "$p" ;;
     esac
