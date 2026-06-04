@@ -13,7 +13,8 @@ var SLOTS = [
   ['—', 0], ['Day', 1], ['Month', 2], ['Week', 3], ['Timezone', 4], ['AM/PM', 5],
   ['Day of year', 6], ['Days left in year', 7], ['Day of year / left', 8],
   ['Seconds', 9], ['Location', 10], ['Sunrise', 11], ['Sunset', 12], ['Moon phase', 13],
-  ['2nd time zone', 14]
+  ['2nd time zone', 14],
+  ['Watch battery', 15], ['Phone battery', 16], ['Bluetooth', 17]
 ];
 
 // UTC offsets for the second time zone (whole hours).

@@ -568,6 +568,29 @@ void update_clock2_text(TextLayer *which_layer) {
   text_layer_set_text(which_layer, buf);
 }
 
+// System-info slots: the connection and the two batteries can be shown in any
+// complication slot, so they share the same TextLayer renderer as the rest.
+void update_wbatt_text(TextLayer *which_layer) {
+  static char buf[8];
+  snprintf(buf, sizeof(buf), "%d%%", battery_percent);
+  text_layer_set_text(which_layer, buf);
+}
+
+void update_pbatt_text(TextLayer *which_layer) {
+  static char buf[8];
+  if (phone_battery_percent >= 0) {
+    snprintf(buf, sizeof(buf), "%d%%", phone_battery_percent);
+  } else {
+    snprintf(buf, sizeof(buf), "--");
+  }
+  text_layer_set_text(which_layer, buf);
+}
+
+void update_conn_text(TextLayer *which_layer) {
+  text_layer_set_text(which_layer, bluetooth_connected
+    ? lang_gen_get()->statuses[0] : lang_gen_get()->statuses[1]);
+}
+
 char * get_doy_text() {
   static char doy_text[] = "D000";
   strftime(doy_text, sizeof(doy_text), "D%j", currentTime);
@@ -619,6 +642,9 @@ void update_slot_text(TextLayer *layer, uint8_t content) {
   case 12: update_sunset_text(layer);    break; // Sunset
   case 13: update_moon_text(layer);      break; // Moon phase
   case 14: update_clock2_text(layer);    break; // Second time zone
+  case 15: update_wbatt_text(layer);     break; // Watch battery
+  case 16: update_pbatt_text(layer);     break; // Phone battery
+  case 17: update_conn_text(layer);      break; // Bluetooth connection
   default: break;                                // 0 = hidden
   }
 }
