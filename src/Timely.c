@@ -239,23 +239,6 @@ static void compute_layout(int w, int h) {
 */
 
 
-persist settings = {
-  .version    = 12,
-  .inverted   = 0, // no, dark
-  .day_invert = 1, // yes
-  .grid       = 1, // yes
-  .vibe_hour  = 0, // no
-  .dayOfWeekOffset = 0, // 0 - 6, Sun - Sat
-  .date_format = 0, // Month DD, YYYY
-  .show_am_pm  = 0, // no AM/PM       [0:Hide, 1:AM/PM, 2:TZ,    3:Week,  4:DoY,  5:DLiY,   6:Seconds]
-  .show_day    = 0, // no day name    [0:Hide, 1:Day,   2:Month, 3:TZ,    4:Week, 5:AM/PM   6:DoY/DLiY]
-  .show_week   = 0, // no week number [0:Hide, 1:Week,  2:TZ,    3:AM/PM, 4:DoY,  5:DLiY,   6:Seconds]
-  .week_format = 0, // ISO 8601
-  .vibe_pat_disconnect = 2, // double vibe
-  .vibe_pat_connect = 0, // no vibe
-  .strftime_format = "%Y-%m-%d",
-  .track_battery = 0, // no battery tracking by default
-};
 
 persist_months_lang lang_months = {
   .monthsNames = { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" },
@@ -282,49 +265,6 @@ persist_debug debug = {
   .reserved_4 = false,  // debugging disabled by default
 };
 
-persist_adv_settings adv_settings = {
-  // Calendar week pattern - which weeks to show
-  .week_pattern = 0,    // 0:lcn, 1:llc, 2:cnn, 3:lc, 4:cn, 5:c
-  // Inversions
-  .invertStatBar = 0,   // 1: invert Statusbar
-  .invertTopSlot = 0,   // 1: invert Top Slot
-  .invertBotSlot = 0,   // 1: invert Bottom Slot 
-  // Status bar auto-hiding...
-  .showStatus = 1,      // Status: 0: never(!?), 1: always, 2: only when disconnected/charging/battery, 3: minimal always, 4: minimal #2
-  .showStatusBat = 100, // Status: battery percentage above which to hide statusbar if hiding it is allowed
-  // Date hiding... because I didn't reserve 0 in date_format ;)
-  .showDate = 1,        // Date: 0: never, 1: always
-  // DND start/stop (suppress vibrations, Weather updates, pretty much anything except updating the time)
-    // ...hopefully this will become pointless with a SDK update which exposes the watches DND...
-  .DND_start = 0,       // Do Not Disturb: 10 minute increments, 0 = 12:00am, 144 = 12:00am (following day)
-  .DND_stop  = 0,       // Do Not Disturb: 10 minute increments, 0 = 12:00am, 144 = 12:00am (following day)
-  .DND_accel_off = 0,   // Do Not Disturb: disable accelerometer polling during DND?
-  // hourly vibration start/stop
-  .vibe_hour_start = 0, // Hour Vibe: 10 minute increments, 0 = 12:00am, 144 = 12:00am (following day)
-  .vibe_hour_stop  = 0, // Hour Vibe: 10 minute increments, 0 = 12:00am, 144 = 12:00am (following day)
-  .vibe_hour_days  = 0, // Hour Vibe: days active [Su 1, Mo 2, Tu 4, We 8, Th 16, Fr 32, Sa 64 => 0 => 127]
-  // Idle reminders (accelerometer)
-  .idle_reminder = 0,   // Idle: 0 = off; minutes 1 - 255 (0:01 to 4:15; 4 1/4 hours = meal/bathroom reminder, haha)
-  .idle_pattern = 0,    // Idle: vibration pattern
-  .idle_message = { "Let's Move!" }, // Idle: reminder message
-  .idle_start = 0,      // Idle: 10 minute increments, 0 = 12:00am, 143 = 12:00am (following day)
-  .idle_stop  = 0,      // Idle: 10 minute increments, 0 = 12:00am, 143 = 12:00am (following day)
-  // Second Clock
-  .clock2_tz = 0,       // 2nd clock: tz offset in 15 minute increments
-  .clock2_desc = { "Second Clock" }, // 2nd clock: desc / city name of 2nd clock
-  // Weather
-  .weather_format = 0,  // Weather: 0: fahrenheit, 1: celsius
-  .weather_update = 15, // Weather: minutes between weather updates [must divide into 60 cleanly]
-  .weather_lat = "",    // latitude for 'static' weather lookups (GPS disabled)
-  .weather_lon = "",   // longitude for 'static' weather lookups (GPS disabled)
-  // Font
-  .clock_font = 1,      // 1: default, 2: ?
-  // Tokencode
-  .token_type = { 0, 0 },   // Token: Google/other tokencode(s)
-  .token_code = { "", "" }, // Token: Tokencode/seed
-  // Slots... will require either app mode or fancy acceleration to access this many slots ;)
-  .slots = { 0, 1, 2, 3, 0, 1, 0, 1, 0, 1 } // 0 = clock_1, 1 = calendar, 2 = weather, 3 = forecast
-};
 
 /*
 char *translate_error(AppMessageResult result) {
@@ -409,8 +349,8 @@ void calendar_layer_update_callback(Layer *me, GContext* ctx) {
                                   currentTime->tm_mon,
                                   currentTime->tm_mday,
                                   currentTime->tm_wday,
-                                  settings.dayOfWeekOffset,
-                                  adv_settings.week_pattern);
+                                  settings_get()->dayOfWeekOffset,
+                                  adv_settings_get()->week_pattern);
     int *calendar = grid.days;
     int specialDay = grid.special_col;
     if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Calendar - sCol: %d, sRow: %d", grid.special_col, grid.special_row); }
@@ -430,7 +370,7 @@ void calendar_layer_update_callback(Layer *me, GContext* ctx) {
     if (strcmp(lang_gen.language,"RU") == 0 ) { font_vert_offset = -2; }
 
     // generate a light background for the calendar grid
-    if (settings.grid) {
+    if (settings_get()->grid) {
       setInvColors(ctx);
       graphics_fill_rect(ctx, GRect (CAL_LEFT + CAL_GAP, CAL_HEIGHT - CAL_GAP, DEVICE_WIDTH - 2 * (CAL_LEFT + CAL_GAP), CAL_HEIGHT * weeks), 0, GCornerNone);
       setColors(ctx);
@@ -438,7 +378,7 @@ void calendar_layer_update_callback(Layer *me, GContext* ctx) {
     for (int col = 0; col < CAL_DAYS; col++) {
 
       // Adjust labels by specified offset
-      int weekday = col + settings.dayOfWeekOffset;
+      int weekday = col + settings_get()->dayOfWeekOffset;
       if (weekday > 6) { weekday -= 7; }
 
       if (col == specialDay) {
@@ -475,7 +415,7 @@ void calendar_layer_update_callback(Layer *me, GContext* ctx) {
       week++;
       for (int col = 0; col < CAL_DAYS; col++) {
         if ( row == specialRow && col == specialDay) {
-          if (settings.day_invert) {
+          if (settings_get()->day_invert) {
             setTodayColors(ctx);
           }
           current = bold;
@@ -581,9 +521,9 @@ void update_date_text() {
     static char date_string[64]; // localized "%s %s %s" date; sized to avoid truncation under modern gcc
     // http://www.cplusplus.com/reference/ctime/strftime/
 
-    if (settings.date_format < 195) { // localized date formats...
+    if (settings_get()->date_format < 195) { // localized date formats...
       char date_text_2[24];
-      switch ( settings.date_format ) {
+      switch ( settings_get()->date_format ) {
       case 0: // MMMM DD, YYYY (localized)
         strftime(date_text, sizeof(date_text), "%d, %Y", currentTime); // DD, YYYY
         snprintf(date_string, sizeof(date_string), "%s %s", lang_months.monthsNames[currentTime->tm_mon], date_text); // prefix Month
@@ -622,10 +562,10 @@ void update_date_text() {
         break;
       }
     } else { // non-localized date formats, straight strftime function calls
-      if ((settings.date_format>=195)||(settings.date_format<=254)) { // load from table
-        strftime(date_text, sizeof(date_text), datestr[settings.date_format-195], currentTime);
-      } else if (settings.date_format==255) {
-        strftime(date_text, sizeof(date_text), settings.strftime_format, currentTime);  
+      if ((settings_get()->date_format>=195)||(settings_get()->date_format<=254)) { // load from table
+        strftime(date_text, sizeof(date_text), datestr[settings_get()->date_format-195], currentTime);
+      } else if (settings_get()->date_format==255) {
+        strftime(date_text, sizeof(date_text), settings_get()->strftime_format, currentTime);  
       }
 
       snprintf(date_string, sizeof(date_string), "%s", date_text); // straight copy
@@ -671,10 +611,10 @@ void update_month_text(TextLayer *which_layer) {
 void update_week_text(TextLayer *which_layer) {
   static char week_text[] = "W00";
   char week_format[] = "W%V"; // V = ISO 8601 week number (00-53)
-  if (settings.week_format == 1) {
+  if (settings_get()->week_format == 1) {
     // U = Week number with the first Sunday as the first day of week one (00-53)
     week_format[2] = 'U';
-  } else if (settings.week_format == 2) {
+  } else if (settings_get()->week_format == 2) {
     // W = Week number with the first Monday as the first day of week one (00-53)
     week_format[2] = 'W';
   }
@@ -731,7 +671,7 @@ void update_timezone_text(TextLayer *which_layer) {
 
 void process_show_week() {
   // LEFT
-  switch ( settings.show_week ) {
+  switch ( settings_get()->show_week ) {
   case 0: // Hide
     //layer_set_hidden(text_layer_get_layer(week_layer), true);
     return;
@@ -758,7 +698,7 @@ void process_show_week() {
 
 void process_show_day() {
   // MIDDLE
-  switch ( settings.show_day ) {
+  switch ( settings_get()->show_day ) {
   case 0: // Hide
     //layer_set_hidden(text_layer_get_layer(day_layer), true);
     return;
@@ -785,7 +725,7 @@ void process_show_day() {
 
 void process_show_ampm() {
   // RIGHT
-  switch ( settings.show_am_pm ) {
+  switch ( settings_get()->show_am_pm ) {
   case 0: // Hide
     //layer_set_hidden(text_layer_get_layer(ampm_layer), true);
     return;
@@ -855,7 +795,7 @@ void position_time_layer() {
   // potentially adjust the clock position, if we've added/removed the week, day, or AM/PM layers
   static int time_offset = 0;
   static int weather_offset = 0;
-  if (!settings.show_day && !settings.show_week && !settings.show_am_pm) {
+  if (!settings_get()->show_day && !settings_get()->show_week && !settings_get()->show_am_pm) {
     time_offset = 12;
     weather_offset = 0;
   } else {
@@ -883,11 +823,11 @@ void datetime_layer_update_callback(Layer *me, GContext* ctx) {
 }
 
 void statusbar_visible() {
-  if (adv_settings.showStatus == 0) {
+  if (adv_settings_get()->showStatus == 0) {
     showing_statusbar = false;
-  } else if (adv_settings.showStatus == 1) {
+  } else if (adv_settings_get()->showStatus == 1) {
     showing_statusbar = true;
-  } else if (battery_percent <= adv_settings.showStatusBat) {
+  } else if (battery_percent <= adv_settings_get()->showStatusBat) {
     showing_statusbar = true;
   } else {
     showing_statusbar = false;
@@ -895,7 +835,7 @@ void statusbar_visible() {
 }
 
 void toggle_weather() {
-  if (adv_settings.weather_update) {
+  if (adv_settings_get()->weather_update) {
     //if (!showing_statusbar) { text_layer_set_text_alignment(date_layer, GTextAlignmentRight); }
     text_layer_set_text_alignment(time_layer, GTextAlignmentRight);
     layer_set_hidden(weather_layer, false);
@@ -912,7 +852,7 @@ void toggle_statusbar() {
     layer_set_hidden(statusbar, false);
     // date
     layer_add_child(datetime_layer, text_layer_get_layer(date_layer));
-    if (adv_settings.weather_update && (settings.show_day || settings.show_week || settings.show_am_pm)) {
+    if (adv_settings_get()->weather_update && (settings_get()->show_day || settings_get()->show_week || settings_get()->show_am_pm)) {
       text_layer_set_text_alignment(date_layer, GTextAlignmentRight);
     } else {
       text_layer_set_text_alignment(date_layer, GTextAlignmentCenter);
@@ -991,7 +931,7 @@ static void request_weather(void *data) {
   if (dict_write_uint8(iter, AK_MESSAGE_TYPE, AK_REQUEST_WEATHER) != DICT_OK) {
     return;
   }
-  if (dict_write_uint8(iter, AK_WEATHER_FMT, adv_settings.weather_format) != DICT_OK) {
+  if (dict_write_uint8(iter, AK_WEATHER_FMT, adv_settings_get()->weather_format) != DICT_OK) {
     return;
   }
   app_message_outbox_send();
@@ -1031,7 +971,7 @@ static void watch_version_send(void *data) {
   if (dict_write_uint8(iter, AK_MESSAGE_TYPE, AK_SEND_WATCH_VERSION) != DICT_OK) {
     return;
   }
-  if (dict_write_uint8(iter, AK_SEND_WATCH_VERSION, settings.version) != DICT_OK) {
+  if (dict_write_uint8(iter, AK_SEND_WATCH_VERSION, settings_get()->version) != DICT_OK) {
     return;
   }
   if (dict_write_cstring(iter, AK_SEND_CONFIG_VERSION, CONFIG_VERSION) != DICT_OK) {
@@ -1044,7 +984,7 @@ static void battery_status_send(void *data) {
   static uint8_t sent_battery_percent = 10;
   static bool sent_battery_charging = false;
   static bool sent_battery_plugged = false;
-  if (!settings.track_battery) {
+  if (!settings_get()->track_battery) {
     return; // if user has chosen not to track battery (saves power w/ appmessages)
   }
   if ( (battery_percent  == sent_battery_percent  )
@@ -1100,7 +1040,7 @@ void set_status_charging_icon() {
       if (battery_plugged) { // plugged but not charging = charging complete...
         layer_set_hidden(bitmap_layer_get_layer(bmp_charging_layer), true);
       } else { // normal wear
-        if (settings.vibe_hour && vibe_period_active) {
+        if (settings_get()->vibe_hour && vibe_period_active) {
           layer_set_hidden(bitmap_layer_get_layer(bmp_charging_layer), false);
           bitmap_layer_set_bitmap(bmp_charging_layer, image_hourvibe_icon);
         } else {
@@ -1196,10 +1136,10 @@ void generate_vibe(uint32_t vibe_pattern_number) {
 void update_connection() {
   text_layer_set_text(text_connection_layer, bluetooth_connected ? lang_gen.statuses[0] : lang_gen.statuses[1]) ;
   if (bluetooth_connected) {
-    generate_vibe(settings.vibe_pat_connect);  // non-op, by default
+    generate_vibe(settings_get()->vibe_pat_connect);  // non-op, by default
     bitmap_layer_set_bitmap(bmp_connection_layer, image_connection_icon);
   } else {
-    generate_vibe(settings.vibe_pat_disconnect);  // because, this is bad...
+    generate_vibe(settings_get()->vibe_pat_disconnect);  // because, this is bad...
     bitmap_layer_set_bitmap(bmp_connection_layer, image_noconnection_icon);
   }
 }
@@ -1253,14 +1193,14 @@ bool period_check(uint8_t start_incr, uint8_t stop_incr, bool retval_on_equal) {
 }
 
 bool dnd_period_check() {
-  // TODO - adv_settings.DND_accel_off = 0,   // Do Not Disturb: disable accelerometer polling during DND?
-  dnd_period_active = period_check(adv_settings.DND_start, adv_settings.DND_stop, false);
+  // TODO - adv_settings_get()->DND_accel_off = 0,   // Do Not Disturb: disable accelerometer polling during DND?
+  dnd_period_active = period_check(adv_settings_get()->DND_start, adv_settings_get()->DND_stop, false);
   if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Tested DND period... %d", (int)dnd_period_active); }
   return dnd_period_active;
 }
 bool hourvibe_period_check() {
-  // TODO - adv_settings.vibe_hour_days  = 0, // Hour Vibe: days active [Su 1, Mo 2, Tu 4, We 8, Th 16, Fr 32, Sa 64 => 0 => 127]
-  vibe_period_active = period_check(adv_settings.vibe_hour_start, adv_settings.vibe_hour_stop, true);
+  // TODO - adv_settings_get()->vibe_hour_days  = 0, // Hour Vibe: days active [Su 1, Mo 2, Tu 4, We 8, Th 16, Fr 32, Sa 64 => 0 => 127]
+  vibe_period_active = period_check(adv_settings_get()->vibe_hour_start, adv_settings_get()->vibe_hour_stop, true);
   if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Tested vibe period... %d", (int)vibe_period_active); }
   return vibe_period_active;
 }
@@ -1368,7 +1308,7 @@ static void window_load(Window *window) {
   week_layer = text_layer_create( GRect(4, REL_CLOCK_SUBTEXT_TOP, 140, 18) );
   set_layer_attr_sfont(week_layer, FONT_KEY_GOTHIC_14, GTextAlignmentLeft);
   layer_add_child(datetime_layer, text_layer_get_layer(week_layer));
-  if ( settings.show_week == 0 ) {
+  if ( settings_get()->show_week == 0 ) {
     layer_set_hidden(text_layer_get_layer(week_layer), true);
   }
 
@@ -1376,14 +1316,14 @@ static void window_load(Window *window) {
   set_layer_attr_sfont(day_layer, FONT_KEY_GOTHIC_14, GTextAlignmentCenter);
   position_day_layer(); // depends on font/language
   layer_add_child(datetime_layer, text_layer_get_layer(day_layer));
-  if ( settings.show_day == 0 ) {
+  if ( settings_get()->show_day == 0 ) {
     layer_set_hidden(text_layer_get_layer(day_layer), true);
   }
 
   ampm_layer = text_layer_create( GRect(0, REL_CLOCK_SUBTEXT_TOP, 140, 18) );
   set_layer_attr_sfont(ampm_layer, FONT_KEY_GOTHIC_14, GTextAlignmentRight);
   layer_add_child(datetime_layer, text_layer_get_layer(ampm_layer));
-  if ( settings.show_am_pm == 0 ) {
+  if ( settings_get()->show_am_pm == 0 ) {
     layer_set_hidden(text_layer_get_layer(ampm_layer), true);
   }
 
@@ -1417,7 +1357,7 @@ static void window_load(Window *window) {
   // topmost inverter layer, determines dark or light...
   inverter_layer = effect_layer_create(bounds);
   effect_layer_add_effect(inverter_layer, effect_invert, NULL);
-  if (settings.inverted==0) {
+  if (settings_get()->inverted==0) {
     layer_set_hidden(effect_layer_get_layer(inverter_layer), true);
   }
   layer_add_child(window_layer, effect_layer_get_layer(inverter_layer));
@@ -1468,7 +1408,7 @@ void handle_vibe_suppression() {
   // it is useful to set it true directly (briefly), to ensure suppression, and then call this function afterwards
   if (dnd_period_active || battery_plugged) {
     vibe_suppression = true;
-  } else if (settings.vibe_hour && vibe_period_active) {
+  } else if (settings_get()->vibe_hour && vibe_period_active) {
     vibe_suppression = false;
   } else {
     vibe_suppression = false;
@@ -1485,8 +1425,8 @@ void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed)
     set_status_charging_icon();
     handle_vibe_suppression();
   }
-  if (bluetooth_connected && adv_settings.weather_update) {
-    if (adv_settings.weather_update && (currentTime->tm_min + 60) % adv_settings.weather_update == 0) {
+  if (bluetooth_connected && adv_settings_get()->weather_update) {
+    if (adv_settings_get()->weather_update && (currentTime->tm_min + 60) % adv_settings_get()->weather_update == 0) {
       weather_request = app_timer_register(1000, &request_weather, NULL);
     } else if (weather_state()->current == 999 && weather_state()->requests < 5) {
       // ANDROIIIIIDRAGE  (or, someone who's got weather enabled but location services disabled)
@@ -1500,8 +1440,8 @@ void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed)
   if (units_changed & HOUR_UNIT) {
     request_timezone(NULL);
     update_datetime_subtext();
-    if (settings.vibe_hour && vibe_period_active) {
-      generate_vibe(settings.vibe_hour); // will be suppressed if within DND
+    if (settings_get()->vibe_hour && vibe_period_active) {
+      generate_vibe(settings_get()->vibe_hour); // will be suppressed if within DND
     }
   }
 
@@ -1517,10 +1457,10 @@ void handle_second_tick(struct tm *tick_time, TimeUnits units_changed)
 {
   *currentTime = *tick_time;
   // update the seconds layer(s)...
-  if (settings.show_week == 6) {
+  if (settings_get()->show_week == 6) {
     update_seconds_text(week_layer);
   }
-  if (settings.show_am_pm == 6) {
+  if (settings_get()->show_am_pm == 6) {
     update_seconds_text(ampm_layer);
   }
   // redraw everything else if the minute changes...
@@ -1530,7 +1470,7 @@ void handle_second_tick(struct tm *tick_time, TimeUnits units_changed)
 }
 
 static int need_second_tick_handler(void) {
-  if ((settings.show_week == 6) || (settings.show_am_pm == 6)) { return 1; }
+  if ((settings_get()->show_week == 6) || (settings_get()->show_am_pm == 6)) { return 1; }
   return 0; 
 }
 
@@ -1614,7 +1554,7 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     // style_inv == inverted
     Tuple *style_inv = dict_find(received, AK_STYLE_INV);
     if (style_inv != NULL) {
-      settings.inverted = style_inv->value->uint8;
+      settings_get()->inverted = style_inv->value->uint8;
       if (style_inv->value->uint8==0) {
         layer_set_hidden(effect_layer_get_layer(inverter_layer), true); // hide inversion = dark
       } else {
@@ -1625,40 +1565,40 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     // style_day_inv == day_invert
     Tuple *style_day_inv = dict_find(received, AK_STYLE_DAY_INV);
     if (style_day_inv != NULL) {
-      settings.day_invert = style_day_inv->value->uint8;
+      settings_get()->day_invert = style_day_inv->value->uint8;
     }
 
     // style_grid == grid
     Tuple *style_grid = dict_find(received, AK_STYLE_GRID);
     if (style_grid != NULL) {
-      settings.grid = style_grid->value->uint8;
+      settings_get()->grid = style_grid->value->uint8;
     }
 
     // AK_VIBE_HOUR == vibe_hour - vibration patterns for hourly vibration
     Tuple *vibe_hour = dict_find(received, AK_VIBE_HOUR);
     if (vibe_hour != NULL) {
-      settings.vibe_hour = vibe_hour->value->uint8;
+      settings_get()->vibe_hour = vibe_hour->value->uint8;
       set_status_charging_icon();
     }
 
     // INTL_DOWO == dayOfWeekOffset
     Tuple *INTL_DOWO = dict_find(received, AK_INTL_DOWO);
     if (INTL_DOWO != NULL) {
-      settings.dayOfWeekOffset = INTL_DOWO->value->uint8;
+      settings_get()->dayOfWeekOffset = INTL_DOWO->value->uint8;
     }
 
     // AK_INTL_FMT_DATE == date format (strftime + manual localization)
     Tuple *FMT_DATE = dict_find(received, AK_INTL_FMT_DATE);
     if (FMT_DATE != NULL) {
-      settings.date_format = FMT_DATE->value->uint8;
+      settings_get()->date_format = FMT_DATE->value->uint8;
       update_date_text();
     }
 
     // AK_STYLE_WEEK
     Tuple *style_week = dict_find(received, AK_STYLE_WEEK);
     if (style_week != NULL) {
-      settings.show_week = style_week->value->uint8;
-      if ( settings.show_week ) {
+      settings_get()->show_week = style_week->value->uint8;
+      if ( settings_get()->show_week ) {
         layer_set_hidden(text_layer_get_layer(week_layer), false);
       }  else {
         layer_set_hidden(text_layer_get_layer(week_layer), true);
@@ -1668,14 +1608,14 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     // AK_INTL_FMT_WEEK == week format (strftime)
     Tuple *FMT_WEEK = dict_find(received, AK_INTL_FMT_WEEK);
     if (FMT_WEEK != NULL) {
-      settings.week_format = FMT_WEEK->value->uint8;
+      settings_get()->week_format = FMT_WEEK->value->uint8;
     }
 
     // AK_STYLE_DAY
     Tuple *style_day = dict_find(received, AK_STYLE_DAY);
     if (style_day != NULL) {
-      settings.show_day = style_day->value->uint8;
-      if ( settings.show_day ) {
+      settings_get()->show_day = style_day->value->uint8;
+      if ( settings_get()->show_day ) {
         layer_set_hidden(text_layer_get_layer(day_layer), false);
       }  else {
         layer_set_hidden(text_layer_get_layer(day_layer), true);
@@ -1685,8 +1625,8 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     // AK_STYLE_AM_PM
     Tuple *style_am_pm = dict_find(received, AK_STYLE_AM_PM);
     if (style_am_pm != NULL) {
-      settings.show_am_pm = style_am_pm->value->uint8;
-      if ( settings.show_am_pm ) {
+      settings_get()->show_am_pm = style_am_pm->value->uint8;
+      if ( settings_get()->show_am_pm ) {
         layer_set_hidden(text_layer_get_layer(ampm_layer), false);
       }  else {
         layer_set_hidden(text_layer_get_layer(ampm_layer), true);
@@ -1703,18 +1643,18 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     // AK_VIBE_PAT_DISCONNECT / AK_VIBE_PAT_CONNECT == vibration patterns for connect and disconnect
     Tuple *VIBE_PAT_D = dict_find(received, AK_VIBE_PAT_DISCONNECT);
     if (VIBE_PAT_D != NULL) {
-      settings.vibe_pat_disconnect = VIBE_PAT_D->value->uint8;
+      settings_get()->vibe_pat_disconnect = VIBE_PAT_D->value->uint8;
     }
     Tuple *VIBE_PAT_C = dict_find(received, AK_VIBE_PAT_CONNECT);
     if (VIBE_PAT_C != NULL) {
-      settings.vibe_pat_connect = VIBE_PAT_C->value->uint8;
+      settings_get()->vibe_pat_connect = VIBE_PAT_C->value->uint8;
     }
 
     // AK_TRACK_BATTERY == whether or not to do battery tracking
     Tuple *track_battery = dict_find(received, AK_TRACK_BATTERY);
     if (track_battery != NULL) {
-      settings.track_battery = track_battery->value->uint8;
-      if (settings.track_battery) {
+      settings_get()->track_battery = track_battery->value->uint8;
+      if (settings_get()->track_battery) {
         battery_status_send(NULL); // either it was just turned on, or we'll get a bonus datapoint from running config.
       }
     }
@@ -1722,95 +1662,95 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     // AK_CAL_WEEK_PATTERN == which weeks are shown in calendar (last,current,next - etc.)
     Tuple *week_pattern = dict_find(received, AK_CAL_WEEK_PATTERN);
     if (week_pattern != NULL) {
-      adv_settings.week_pattern = week_pattern->value->uint8;
+      adv_settings_get()->week_pattern = week_pattern->value->uint8;
     }
 
     Tuple *appkey;
 
     // AK_INV_SLOT_STAT == invert slot (or not!) // TODO, UNUSED
     appkey = dict_find(received, AK_INV_SLOT_STAT);
-    if (appkey != NULL) { adv_settings.invertStatBar = appkey->value->uint8; }
+    if (appkey != NULL) { adv_settings_get()->invertStatBar = appkey->value->uint8; }
 
     // AK_INV_SLOT_TOP == invert slot (or not!) // TODO, UNUSED
     appkey = dict_find(received, AK_INV_SLOT_TOP);
-    if (appkey != NULL) { adv_settings.invertTopSlot = appkey->value->uint8; }
+    if (appkey != NULL) { adv_settings_get()->invertTopSlot = appkey->value->uint8; }
 
     // AK_INV_SLOT_BOT == invert slot (or not!) // TODO, UNUSED
     appkey = dict_find(received, AK_INV_SLOT_BOT);
-    if (appkey != NULL) { adv_settings.invertBotSlot = appkey->value->uint8; }
+    if (appkey != NULL) { adv_settings_get()->invertBotSlot = appkey->value->uint8; }
 
     // AK_SHOW_STAT_BAR == show statusbar
     appkey = dict_find(received, AK_SHOW_STAT_BAR);
-    if (appkey != NULL) { adv_settings.showStatus = appkey->value->uint8; }
+    if (appkey != NULL) { adv_settings_get()->showStatus = appkey->value->uint8; }
 
     // AK_SHOW_STAT_BATT == statusbar battery limit
     appkey = dict_find(received, AK_SHOW_STAT_BATT);
-    if (appkey != NULL) { adv_settings.showStatusBat = appkey->value->uint8; }
+    if (appkey != NULL) { adv_settings_get()->showStatusBat = appkey->value->uint8; }
 
     // AK_SHOW_DATE == show date // TODO, UNUSED
     appkey = dict_find(received, AK_SHOW_DATE);
-    if (appkey != NULL) { adv_settings.showDate = appkey->value->uint8; }
+    if (appkey != NULL) { adv_settings_get()->showDate = appkey->value->uint8; }
 
     // AK_DND_START == period start, DND
     appkey = dict_find(received, AK_DND_START);
-    if (appkey != NULL) { adv_settings.DND_start = appkey->value->uint8; }
+    if (appkey != NULL) { adv_settings_get()->DND_start = appkey->value->uint8; }
 
     // AK_DND_STOP == period stop, DND
     appkey = dict_find(received, AK_DND_STOP);
-    if (appkey != NULL) { adv_settings.DND_stop = appkey->value->uint8; }
+    if (appkey != NULL) { adv_settings_get()->DND_stop = appkey->value->uint8; }
 
     // AK_DND_NOACCEL == [perhaps] disable accelerometer during DND // TODO, UNUSED
     appkey = dict_find(received, AK_DND_NOACCEL);
-    if (appkey != NULL) { adv_settings.DND_accel_off = appkey->value->uint8; }
+    if (appkey != NULL) { adv_settings_get()->DND_accel_off = appkey->value->uint8; }
 
     // AK_VIBE_START == period start, VIBE
     appkey = dict_find(received, AK_VIBE_START);
-    if (appkey != NULL) { adv_settings.vibe_hour_start = appkey->value->uint8; }
+    if (appkey != NULL) { adv_settings_get()->vibe_hour_start = appkey->value->uint8; }
 
     // AK_VIBE_STOP == period stop, VIBE
     appkey = dict_find(received, AK_VIBE_STOP);
-    if (appkey != NULL) { adv_settings.vibe_hour_stop = appkey->value->uint8; }
+    if (appkey != NULL) { adv_settings_get()->vibe_hour_stop = appkey->value->uint8; }
 
     // AK_VIBE_DAYS == days to do hourly vibration // TODO, UNUSED
     appkey = dict_find(received, AK_VIBE_DAYS);
-    if (appkey != NULL) { adv_settings.vibe_hour_days = appkey->value->uint8; }
+    if (appkey != NULL) { adv_settings_get()->vibe_hour_days = appkey->value->uint8; }
 
     // AK_IDLE_REMINDER == period stop, VIBE // TODO, UNUSED
     appkey = dict_find(received, AK_IDLE_REMINDER);
-    if (appkey != NULL) { adv_settings.idle_reminder = appkey->value->uint8; }
+    if (appkey != NULL) { adv_settings_get()->idle_reminder = appkey->value->uint8; }
 
     // AK_IDLE_VIBE_PATT == idle vibration pattern // TODO, UNUSED
     appkey = dict_find(received, AK_IDLE_VIBE_PATT);
-    if (appkey != NULL) { adv_settings.idle_pattern = appkey->value->uint8; }
+    if (appkey != NULL) { adv_settings_get()->idle_pattern = appkey->value->uint8; }
 
 /* TODO
     // AK_IDLE_MESSAGE == Idle message // TODO, UNUSED
     appkey = dict_find(received, AK_IDLE_MESSAGE);
-    if (appkey != NULL) { strncpy(adv_settings.idle_message, appkey->value->cstring, sizeof(adv_settings.idle_message)-1); }
+    if (appkey != NULL) { strncpy(adv_settings_get()->idle_message, appkey->value->cstring, sizeof(adv_settings_get()->idle_message)-1); }
 */
 
     // AK_IDLE_START == period start, Idle reminder // TODO, UNUSED
     appkey = dict_find(received, AK_IDLE_START);
-    if (appkey != NULL) { adv_settings.idle_start = appkey->value->uint8; }
+    if (appkey != NULL) { adv_settings_get()->idle_start = appkey->value->uint8; }
 
     // AK_IDLE_STOP == period stop, Idle reminder // TODO, UNUSED
     appkey = dict_find(received, AK_IDLE_STOP);
-    if (appkey != NULL) { adv_settings.idle_stop = appkey->value->uint8; }
+    if (appkey != NULL) { adv_settings_get()->idle_stop = appkey->value->uint8; }
 
     // AK_WEATHER_FMT == weather format (0:C / 1:F)
     appkey = dict_find(received, AK_WEATHER_FMT);
     if (appkey != NULL) {
-      adv_settings.weather_format = appkey->value->uint8;
+      adv_settings_get()->weather_format = appkey->value->uint8;
       if (weather_request == NULL) { weather_request = app_timer_register(1000, &request_weather, NULL); }
     }
 
     // AK_WEATHER_UPDATE == weather update frequency
     appkey = dict_find(received, AK_WEATHER_UPDATE);
     if (appkey != NULL) {
-      if (appkey->value->uint8 < adv_settings.weather_update && weather_request == NULL) {
+      if (appkey->value->uint8 < adv_settings_get()->weather_update && weather_request == NULL) {
         weather_request = app_timer_register(1000, &request_weather, NULL);
       }
-      adv_settings.weather_update = appkey->value->uint8;
+      adv_settings_get()->weather_update = appkey->value->uint8;
     }
     statusbar_visible();
     toggle_weather();
@@ -1887,7 +1827,7 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     // end translations...
 
     int result = 0;
-    result = persist_write_data(PK_SETTINGS, &settings, sizeof(settings) );
+    result = persist_write_data(PK_SETTINGS, settings_get(), sizeof(persist) );
     if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Wrote %d bytes into settings", result); }
     result = persist_write_data(PK_LANG_GEN, &lang_gen, sizeof(lang_gen) );
     if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Wrote %d bytes into lang_gen", result); }
@@ -1897,7 +1837,7 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Wrote %d bytes into lang_days", result); }
     result = persist_write_data(PK_DEBUGGING, &debug, sizeof(debug) );
     if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Wrote %d bytes into debug", result); }
-    result = persist_write_data(PK_ADV_SETTINGS, &adv_settings, sizeof(adv_settings) );
+    result = persist_write_data(PK_ADV_SETTINGS, adv_settings_get(), sizeof(persist_adv_settings) );
     if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Wrote %d bytes into adv_settings", result); }
 
     // ==== Implemented SDK ====
@@ -1971,10 +1911,10 @@ static void init(void) {
   app_message_init();
 
   if (persist_exists(PK_SETTINGS)) {
-    persist_read_data(PK_SETTINGS, &settings, sizeof(settings) );
-    if (settings.version == 11) { // v11 -> v12 bugfix
-      if (settings.date_format > 234) { settings.date_format = settings.date_format + 1; }
-      settings.version = 12;
+    persist_read_data(PK_SETTINGS, settings_get(), sizeof(persist) );
+    if (settings_get()->version == 11) { // v11 -> v12 bugfix
+      if (settings_get()->date_format > 234) { settings_get()->date_format = settings_get()->date_format + 1; }
+      settings_get()->version = 12;
     }
     if (persist_exists(PK_LANG_GEN)) {
       persist_read_data(PK_LANG_GEN, &lang_gen, sizeof(lang_gen) );
@@ -1988,16 +1928,16 @@ static void init(void) {
     if (persist_exists(PK_DEBUGGING)) {
       persist_read_data(PK_DEBUGGING, &debug, sizeof(debug) );
     }
-    //persist_write_data(PK_ADV_SETTINGS, &adv_settings, sizeof(adv_settings) ); // XXX TODO reset to defaults, for testing...
+    //persist_write_data(PK_ADV_SETTINGS, adv_settings_get(), sizeof(persist_adv_settings) ); // XXX TODO reset to defaults, for testing...
     if (persist_exists(PK_ADV_SETTINGS)) {
-      persist_read_data(PK_ADV_SETTINGS, &adv_settings, sizeof(adv_settings) );
+      persist_read_data(PK_ADV_SETTINGS, adv_settings_get(), sizeof(persist_adv_settings) );
     }
   }
   // re-initialize this, if it was set, since we're storing those values persistently as well...
   if (DEBUGLOG == 1) { debug.general = true; }
   if (TRANSLOG == 1) { debug.language = true; }
 
-  if (adv_settings.weather_update) {
+  if (adv_settings_get()->weather_update) {
     weather_request = app_timer_register(1250, &request_weather, NULL);
     //request_weather(NULL);
   }
