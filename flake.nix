@@ -11,10 +11,10 @@
   # Usage (official Pebble SDK flow, https://developer.repebble.com/sdk/):
   #   nix develop
   #   pebble sdk install latest          # first time only; caches in ~/.pebble-sdk
-  #   pebble build                       # produces build/TimelyColor.pbw
+  #   pebble build                       # produces build/PebbleTimely.pbw
   #   pebble install --emulator emery    # color emulator (or basalt/flint/...)
   #   pebble login && pebble install --cloudpebble   # push to a paired watch
-  # Host unit tests (pure logic in src/, no Pebble SDK):
+  # Host unit tests (pure modules in src/, no Pebble SDK):
   #   nix flake check                          # reproducible, CI
   #   nix develop .#test --command just test   # or: make test
   # Tests live in a SEPARATE shell on purpose: a host C compiler in the pebble
@@ -41,11 +41,9 @@
               pkgs.gnumake
             ];
             # This 2013 codebase under the modern arm-none-eabi gcc 14 trips many
-            # warnings the SDK promotes to errors (format/stringop truncation,
-            # implicit-fallthrough, ...). The SDK's own suppressions do not reach
-            # the new flint platform, so downgrade warnings to non-fatal here (the
-            # SDK itself already disables ~40 such classes). Set via shellHook
-            # because pebbleEnv's CFLAGS arg is not exported by nix develop.
+            # warnings the SDK promotes to errors. The SDK's own suppressions do
+            # not reach the new flint platform, so downgrade warnings to non-fatal
+            # here (the SDK itself already disables ~40 such classes).
             shellHook = ''
               export CFLAGS="-Wno-error"
             '';
@@ -60,16 +58,21 @@
             ];
           };
 
-          # Reproducible host run of the pure-logic unit tests (no Pebble SDK).
-          checks.default = pkgs.runCommandCC "timefmt-tests" { } ''
+          # Reproducible host run of the pure-module unit suite (no Pebble SDK).
+          checks.default = pkgs.runCommandCC "timelycolor-tests" { } ''
             mkdir -p src tests
             cp ${./src/timefmt.c} src/timefmt.c
             cp ${./src/timefmt.h} src/timefmt.h
-            cp ${./tests/test_timefmt.c} tests/test_timefmt.c
+            cp ${./src/layout.c} src/layout.c
+            cp ${./src/layout.h} src/layout.h
             cp ${./tests/utest.h} tests/utest.h
+            cp ${./tests/test_main.c} tests/test_main.c
+            cp ${./tests/test_timefmt.c} tests/test_timefmt.c
+            cp ${./tests/test_layout.c} tests/test_layout.c
             cc -I src -I tests -Wall -Wextra -std=c11 \
-              tests/test_timefmt.c src/timefmt.c -o test_timefmt
-            ./test_timefmt
+              tests/test_main.c tests/test_timefmt.c tests/test_layout.c \
+              src/timefmt.c src/layout.c -o test_suite
+            ./test_suite
             touch $out
           '';
         }

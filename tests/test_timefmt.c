@@ -44,4 +44,3 @@ UTEST(format_timezone_offset, formats) {
   format_timezone_offset(-5, b, sizeof(b));  ASSERT_STREQ("UTC+1:15", b);  // -1h15
 }
 
-UTEST_MAIN();

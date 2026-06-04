@@ -1,16 +1,16 @@
-# Host-side unit tests for the pure logic in src/ (no Pebble SDK).
-# Equivalent recipes exist in the Makefile. Tools provided by flake.nix dev shell.
+# Host-side unit tests for the pure modules in src/ (no Pebble SDK).
+# Equivalent recipes in the Makefile; tools provided by the flake dev shell.
 cc       := env_var_or_default("CC", "cc")
 cflags   := "-I src -I tests -Wall -Wextra -std=c11"
 build    := "build"
-test_bin := build / "test_timefmt"
-test_src := "tests/test_timefmt.c src/timefmt.c"
+test_bin := build / "test_suite"
+test_src := "tests/*.c src/timefmt.c src/layout.c"
 
-# build + run the unit tests
+# build + run the unit-test suite
 test: build-tests
     ./{{test_bin}}
 
-# build + run the tests, emitting a JUnit XML report
+# build + run the suite, emitting a JUnit XML report
 test-xml: build-tests
     ./{{test_bin}} --output={{build}}/test-results.xml
 
