@@ -1003,6 +1003,22 @@ static void handle_bluetooth(bool connected) {
   }
 }
 
+#ifdef PBL_COLOR
+// Recolor an alpha icon's opaque pixels to `color` (keeps the antialiased edges),
+// so status icons follow the theme like the text. Color platforms only.
+static void tint_icon(GBitmap *bmp, GColor color) {
+  if (!bmp || gbitmap_get_format(bmp) != GBitmapFormat8Bit) { return; }
+  GRect b = gbitmap_get_bounds(bmp);
+  for (int y = b.origin.y; y < b.origin.y + b.size.h; y++) {
+    GBitmapDataRowInfo ri = gbitmap_get_data_row_info(bmp, y);
+    for (int x = ri.min_x; x <= ri.max_x; x++) {
+      GColor8 *px = (GColor8 *)&ri.data[x];
+      if (px->a != 0) { px->r = color.r; px->g = color.g; px->b = color.b; }
+    }
+  }
+}
+#endif
+
 static void apply_palette(void) {
   GColor fg = theme_palette().fg;
   text_layer_set_text_color(time_layer, fg);
@@ -1012,6 +1028,15 @@ static void apply_palette(void) {
   text_layer_set_text_color(ampm_layer, fg);
   text_layer_set_text_color(text_connection_layer, fg);
   text_layer_set_text_color(text_battery_layer, fg);
+#ifdef PBL_COLOR
+  tint_icon(image_connection_icon, fg);
+  tint_icon(image_noconnection_icon, fg);
+  tint_icon(image_charging_icon, fg);
+  tint_icon(image_hourvibe_icon, fg);
+  tint_icon(image_dnd_icon, fg);
+  if (bmp_connection_layer) { layer_mark_dirty(bitmap_layer_get_layer(bmp_connection_layer)); }
+  if (bmp_charging_layer)   { layer_mark_dirty(bitmap_layer_get_layer(bmp_charging_layer)); }
+#endif
 }
 
 static void set_unifont() {
@@ -1111,11 +1136,13 @@ static void window_load(Window *window) {
   GRect slot_bot_bounds = layer_get_bounds(slot_bot);
 
   bmp_connection_layer = bitmap_layer_create( GRect(STAT_BT_ICON_LEFT, STAT_BT_ICON_TOP, 20, 20) );
+  bitmap_layer_set_compositing_mode(bmp_connection_layer, GCompOpSet);
   layer_add_child(statusbar, bitmap_layer_get_layer(bmp_connection_layer));
   image_connection_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BT_LINKED_ICON);
   image_noconnection_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BT_NOLINK_ICON);
 
   bmp_charging_layer = bitmap_layer_create( GRect(STAT_CHRG_ICON_LEFT, STAT_CHRG_ICON_TOP, 20, 20) );
+  bitmap_layer_set_compositing_mode(bmp_charging_layer, GCompOpSet);
   layer_add_child(statusbar, bitmap_layer_get_layer(bmp_charging_layer));
   image_charging_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_CHARGING_ICON);
   image_hourvibe_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_HOURVIBE_ICON);
