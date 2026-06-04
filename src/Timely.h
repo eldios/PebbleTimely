@@ -88,7 +88,6 @@ typedef struct weather_data {
 } __attribute__((__packed__)) weather_data;
 
 char *translate_error(AppMessageResult result);
-int daysInMonth(int mon, int year);
 struct tm *get_time();
 void setColors(GContext* ctx);
 void setInvColors(GContext* ctx);

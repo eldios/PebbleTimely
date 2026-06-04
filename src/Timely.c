@@ -1,6 +1,7 @@
 #include <pebble.h>
 #include <Timely.h>
 #include "effect_layer.h"
+#include "timefmt.h"
 #define DEBUGLOG 0
 #define TRANSLOG 0
 #define CONFIG_VERSION "2.6"
@@ -63,7 +64,6 @@ AppTimer *bottom_toggle = NULL;
 static bool bluetooth_connected = false;
 // suppress vibration
 static bool vibe_suppression = true;
-#define TIMEZONE_UNINITIALIZED 80
 static int8_t timezone_offset = TIMEZONE_UNINITIALIZED;
 struct tm *currentTime;
 static int8_t seconds_shown = 0;
@@ -326,30 +326,6 @@ char *translate_error(AppMessageResult result) {
 }
 */
 
-
-// How many days are/were in the month
-int daysInMonth(int mon, int year) {
-    mon++; // dec = 0|12, lazily optimized
-
-    // April, June, September and November have 30 Days
-    if (mon == 4 || mon == 6 || mon == 9 || mon == 11) {
-        return 30;
-    } else if (mon == 2) {
-        // Deal with Feburary & Leap years
-        if (year % 400 == 0) {
-            return 29;
-        } else if (year % 100 == 0) {
-            return 28;
-        } else if (year % 4 == 0) {
-            return 29;
-        } else {
-            return 28;
-        }
-    } else {
-        // Most months have 31 days
-        return 31;
-    }
-}
 
 struct tm *get_time() {
     time_t tt = time(0);
@@ -783,12 +759,8 @@ char * get_doy_text() {
 
 char * get_dliy_text() {
   static char dliy_text[] = "R000";
-  int daysThisFeb = daysInMonth(1, currentTime->tm_year + 1900);
-  int daysThisYear = 365;
-  if (daysThisFeb == 29) { daysThisYear = 366; }
-  int daysSinceJanFirst = currentTime->tm_yday; // 0-365 inclusive
-  int daysLeftThisYear = daysThisYear - daysSinceJanFirst - 1;
-  snprintf(dliy_text, sizeof(dliy_text), "R%03d", daysLeftThisYear);
+  int days_left = days_left_in_year(currentTime->tm_year + 1900, currentTime->tm_yday);
+  format_days_left_in_year(days_left, dliy_text, sizeof(dliy_text));
   return dliy_text;
 }
 
@@ -807,29 +779,8 @@ void update_doy_dliy_text(TextLayer *which_layer) {
 }
 
 void update_timezone_text(TextLayer *which_layer) {
-  static char timezone_text[10];
-  int tz_hours = 0;
-  int tz_mins  = 0;
-  tz_mins  = timezone_offset % 4;
-  tz_hours = (timezone_offset - tz_mins)/ 4;
-  tz_mins  = tz_mins * 15;
-  if (timezone_offset == TIMEZONE_UNINITIALIZED) {
-    snprintf(timezone_text, sizeof(timezone_text), "UTC ?");
-  } else if (timezone_offset > 0) {
-    if (tz_mins == 0) {
-      //snprintf(timezone_text, sizeof(timezone_text), "UTC-%d:00", tz_hours);
-      snprintf(timezone_text, sizeof(timezone_text), "UTC-%d", tz_hours);
-    } else {
-      snprintf(timezone_text, sizeof(timezone_text), "UTC-%d:%d", tz_hours, tz_mins);
-    }
-  } else {
-    if (tz_mins == 0) {
-      //snprintf(timezone_text, sizeof(timezone_text), "UTC+%d:00", abs(tz_hours));
-      snprintf(timezone_text, sizeof(timezone_text), "UTC+%d", abs(tz_hours));
-    } else {
-      snprintf(timezone_text, sizeof(timezone_text), "UTC+%d:%d", abs(tz_hours), abs(tz_mins));
-    }
-  }
+  static char timezone_text[16];
+  format_timezone_offset(timezone_offset, timezone_text, sizeof(timezone_text));
   text_layer_set_text(which_layer, timezone_text);
 }
 
