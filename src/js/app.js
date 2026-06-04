@@ -1,6 +1,11 @@
 var CONFIG_SPEC = require('./config');
 var buildConfigPage = require('./configpage');
 
+// The bundled SunCalc library (below) used to attach itself to `window`; under
+// the CommonJS bundler there is no global object, so it populates this
+// module-scoped variable instead (see its assignment further down).
+var SunCalc;
+
 var CLIMACON = {
   'cloud'            : '!',
   'cloud_day'        : '"',
@@ -602,7 +607,7 @@ function getSunCoords(d) {
 }
 
 
-var SunCalc = {};
+SunCalc = {};
 
 
 // calculates sun position for a given date and latitude/longitude
