@@ -89,16 +89,24 @@ module.exports = [
       { key: 'intl_fmt_date', label: 'Date format', type: 'select', def: 0, options: DATE_FORMATS },
       { key: 'strftime_format', label: 'Custom format', type: 'text', def: '%Y-%m-%d', max: 31,
         showWhen: { key: 'intl_fmt_date', val: 255 },
-        note: 'strftime pattern, e.g. %a %d %b. Used when Date format is Custom.' },
-      { key: 'slot_ctr_l', label: 'Above time, left', type: 'select', def: 18, options: SLOTS,
-        note: 'Set only one of the Above-time slots for a full-width centered complication; set both for two halves.' },
-      { key: 'slot_ctr_r', label: 'Above time, right', type: 'select', def: 0, options: SLOTS },
-      { key: 'style_week', label: 'Above calendar, left', type: 'select', def: 0, options: SLOTS },
-      { key: 'style_am_pm', label: 'Above calendar, right', type: 'select', def: 0, options: SLOTS },
+        note: 'strftime pattern, e.g. %a %d %b. Used when Date format is Custom.' }
+    ]
+  },
+  {
+    title: 'Complications',
+    note: 'Each row has a left and a right slot. Set one slot for a full-width complication, both for two side-by-side; leave both empty (—) to hide the row and give the space to the clock and calendar.',
+    fields: [
+      { key: 'slot_stat_l', label: 'Status bar — left', type: 'select', def: 16, options: SLOTS },
+      { key: 'slot_stat_r', label: 'Status bar — right', type: 'select', def: 15, options: SLOTS },
+      { key: 'slot_ctr_l', label: 'Above time — left', type: 'select', def: 18, options: SLOTS },
+      { key: 'slot_ctr_r', label: 'Above time — right', type: 'select', def: 0, options: SLOTS },
+      { key: 'style_week', label: 'Above calendar — left', type: 'select', def: 0, options: SLOTS },
+      { key: 'style_am_pm', label: 'Above calendar — right', type: 'select', def: 0, options: SLOTS },
       { key: 'intl_fmt_week', label: 'Week numbering', type: 'select', def: 0,
-        options: [['ISO 8601', 0], ['Sun 1st of W1', 1], ['Mon 1st of W1', 2]] },
-      { key: 'clock2_tz', label: '2nd time zone', type: 'select', def: 0, options: TZ_OFFSETS,
-        note: 'Used by the "2nd time zone" complication.' }
+        options: [['ISO 8601', 0], ['Sun 1st of W1', 1], ['Mon 1st of W1', 2]],
+        note: 'For the "Week" complication.' },
+      { key: 'clock2_tz', label: '2nd time zone offset', type: 'select', def: 0, options: TZ_OFFSETS,
+        note: 'For the "2nd time zone" complication.' }
     ]
   },
   {

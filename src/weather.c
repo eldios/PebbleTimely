@@ -20,7 +20,6 @@ static bool s_compact = false; // narrow screens (144px): smaller glyph + temper
 void weather_set_compact(bool compact) { s_compact = compact; }
 
 static void weather_render(Layer *me, GContext *ctx) {
-  (void)me;
   static char temp_current[12] = "N/A";
   static char cond_current[4] = "0";
   if (weather_state()->current < 900) {
@@ -32,10 +31,19 @@ static void weather_render(Layer *me, GContext *ctx) {
   cond_current[1] = '\0';
 
   setColors(ctx);
+  // The layer IS the time band. Top-align the icon-over-temperature block so it
+  // sits level with the clock (which is also top-aligned) and never spills past
+  // the band into the calendar below.
   GFont temp_font = fonts_get_system_font(s_compact ? FONT_KEY_GOTHIC_18 : FONT_KEY_GOTHIC_24);
-  int temp_top = s_compact ? 40 : 42;
-  graphics_draw_text(ctx, cond_current, climacons, GRect(2,16,34,34), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-  graphics_draw_text(ctx, temp_current, temp_font, GRect(2,temp_top,36,36), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  // gap = where the temperature sits below the icon's top; the climacons glyph
+  // renders well inside its box, so pull the temperature up tight against it.
+  int gap    = s_compact ? 18 : 21;
+  int temp_h = s_compact ? 18 : 22;
+  int band_h = layer_get_bounds(me).size.h;
+  int top = 2;
+  if (top + gap + temp_h > band_h) { top = band_h - gap - temp_h; if (top < 0) { top = 0; } }
+  graphics_draw_text(ctx, cond_current, climacons, GRect(2, top, 34, 36), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  graphics_draw_text(ctx, temp_current, temp_font, GRect(2, top + gap, 36, temp_h + 8), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
   if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Weather redrawing: %d, %s", weather_state()->current, weather_state()->condition); }
 }
 

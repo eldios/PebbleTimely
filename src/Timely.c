@@ -232,10 +232,13 @@ static int REL_CLOCK_SUBTEXT_TOP = 56;
 static int CAL_WIDTH  = 20; // calendar column width (recomputed at runtime)
 static int CAL_HEIGHT = 18; // calendar row height   (recomputed at runtime)
 
-// Recompute the runtime layout for the actual screen. Defaults above match
-// the classic 144x168; this rescales every band/cell for larger screens.
+// Recompute the runtime layout for the actual screen. Bands are adaptive: a row
+// only reserves height when it is in use, so disabling rows grows the rest.
 static void compute_layout(int w, int h) {
-  TimelyLayout L = layout_compute(w, h);
+  int has_top    = adv_settings_get()->showStatus != 0;
+  int has_center = settings_get()->slot_ctr_l || settings_get()->slot_ctr_r;
+  int has_bottom = settings_get()->show_week  || settings_get()->show_am_pm;
+  TimelyLayout L = layout_compute_rows(w, h, has_top, has_center, has_bottom);
   DEVICE_WIDTH = w; DEVICE_HEIGHT = h;
   LAYOUT_STAT = L.statusbar.y;
   LAYOUT_SLOT_TOP = L.slot_top.y;
@@ -765,14 +768,22 @@ void position_day_layer() {
   apply_bottom(); // bottom row owns the above-calendar band now
 }
 
+// Clock font scales to the time band height; Roboto (wide) only on wide screens
+// where it won't collide with the weather to its left.
+const char *time_font_key(void) {
+  int h = REL_CLOCK_TIME_HEIGHT;
+  if (DEVICE_WIDTH >= 180 && h >= 60) { return FONT_KEY_ROBOTO_BOLD_SUBSET_49; }
+  if (h >= 52) { return FONT_KEY_LECO_42_NUMBERS; }
+  if (h >= 44) { return FONT_KEY_LECO_38_BOLD_NUMBERS; }
+  if (h >= 36) { return FONT_KEY_LECO_32_BOLD_NUMBERS; }
+  return FONT_KEY_LECO_28_LIGHT_NUMBERS;
+}
+
 void position_time_layer() {
-  // Nudge the clock/weather up a little when the bottom (above-calendar) row is
-  // in use, so the complications get their strip flush above the calendar.
-  bool bottom_used = settings_get()->show_week || settings_get()->show_am_pm;
-  int time_offset    = bottom_used ? 2 : 12;
-  int weather_offset = bottom_used ? -10 : 0;
-  layer_set_frame( text_layer_get_layer(time_layer), GRect(REL_CLOCK_TIME_LEFT, REL_CLOCK_TIME_TOP + time_offset, DEVICE_WIDTH, REL_CLOCK_TIME_HEIGHT) );
-  weather_set_frame( GRect(REL_CLOCK_TIME_LEFT, weather_offset, DEVICE_WIDTH, LAYOUT_SLOT_HEIGHT) );
+  // The clock and the weather both live in the time band; seat them on it so the
+  // weather is vertically centred against the time instead of floating above.
+  layer_set_frame( text_layer_get_layer(time_layer), GRect(REL_CLOCK_TIME_LEFT, REL_CLOCK_TIME_TOP, DEVICE_WIDTH, REL_CLOCK_TIME_HEIGHT) );
+  weather_set_frame( GRect(REL_CLOCK_TIME_LEFT, REL_CLOCK_TIME_TOP, DEVICE_WIDTH, REL_CLOCK_TIME_HEIGHT) );
 }
 
 void update_datetime_subtext() {
@@ -1323,12 +1334,7 @@ static void window_load(Window *window) {
   weather_create(datetime_layer, slot_top_bounds);
 
   time_layer = text_layer_create( GRect(REL_CLOCK_TIME_LEFT, REL_CLOCK_TIME_TOP, DEVICE_WIDTH - 2, REL_CLOCK_TIME_HEIGHT) ); // see position_time_layer()
-  // Width-aware clock font: Roboto 49 needs ~130px, which on a 144px screen
-  // collides with the weather to its left. Wide screens (emery) keep it; narrow
-  // screens use the condensed LECO clock font so the weather has room.
-  set_layer_attr_sfont(time_layer,
-    (DEVICE_WIDTH >= 180) ? FONT_KEY_ROBOTO_BOLD_SUBSET_49 : FONT_KEY_LECO_38_BOLD_NUMBERS,
-    GTextAlignmentCenter);
+  set_layer_attr_sfont(time_layer, time_font_key(), GTextAlignmentCenter);
   toggle_weather();
   position_time_layer(); // make use of our whitespace, if we have it...
   update_time_text();

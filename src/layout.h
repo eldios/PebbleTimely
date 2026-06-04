@@ -19,8 +19,11 @@ typedef struct {
   int cal_gap;
 } TimelyLayout;
 
-// Compute the layout for a screen of width x height pixels.
-TimelyLayout layout_compute(int width, int height);
+// Compute the layout for a screen of width x height pixels. The _rows variant
+// takes which optional rows are enabled (TOP status bar / CENTER above-time /
+// BOTTOM above-calendar); disabled rows free their height to the rest.
+TimelyLayout layout_compute_rows(int width, int height, int has_top, int has_center, int has_bottom);
+TimelyLayout layout_compute(int width, int height); // all rows present (default)
 
 // The most recently computed layout (set by the view at window_load); read by
 // components that render proportionally (calendar, etc.).
