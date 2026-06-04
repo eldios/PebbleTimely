@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include <pebble.h>
 // Weather state, owned by weather.c. Access only through weather_state().
 typedef struct weather_data {
   int16_t current;    // current temperature
@@ -9,3 +10,5 @@ typedef struct weather_data {
 } __attribute__((__packed__)) weather_data;
 
 weather_data *weather_state(void);
+
+void weather_layer_update_callback(Layer *me, GContext* ctx);
