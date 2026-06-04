@@ -582,7 +582,10 @@ void position_day_layer() {
   } else { // Standard font
     day_vert_offset = 0;
   }
-  layer_set_frame( text_layer_get_layer(day_layer), GRect(REL_CLOCK_DATE_LEFT, REL_CLOCK_SUBTEXT_TOP + day_vert_offset, REL_CLOCK_DATE_WIDTH, REL_CLOCK_DATE_HEIGHT) );
+  // Middle complication: confined to the centre third so it never overlaps the
+  // left (week) and right (am/pm) complications.
+  int third = DEVICE_WIDTH / 3;
+  layer_set_frame( text_layer_get_layer(day_layer), GRect(third, REL_CLOCK_SUBTEXT_TOP + day_vert_offset, third, REL_CLOCK_DATE_HEIGHT) );
 }
 
 void position_time_layer() {
@@ -1148,7 +1151,7 @@ static void window_load(Window *window) {
   update_time_text();
   layer_add_child(datetime_layer, text_layer_get_layer(time_layer));
 
-  week_layer = text_layer_create( GRect(4, REL_CLOCK_SUBTEXT_TOP, 140, 18) );
+  week_layer = text_layer_create( GRect(2, REL_CLOCK_SUBTEXT_TOP, DEVICE_WIDTH / 3 - 2, 18) ); // left third
   set_layer_attr_sfont(week_layer, FONT_KEY_GOTHIC_14, GTextAlignmentLeft);
   layer_add_child(datetime_layer, text_layer_get_layer(week_layer));
   if ( settings_get()->show_week == 0 ) {
@@ -1163,7 +1166,7 @@ static void window_load(Window *window) {
     layer_set_hidden(text_layer_get_layer(day_layer), true);
   }
 
-  ampm_layer = text_layer_create( GRect(0, REL_CLOCK_SUBTEXT_TOP, 140, 18) );
+  ampm_layer = text_layer_create( GRect(DEVICE_WIDTH - DEVICE_WIDTH / 3, REL_CLOCK_SUBTEXT_TOP, DEVICE_WIDTH / 3 - 2, 18) ); // right third
   set_layer_attr_sfont(ampm_layer, FONT_KEY_GOTHIC_14, GTextAlignmentRight);
   layer_add_child(datetime_layer, text_layer_get_layer(ampm_layer));
   if ( settings_get()->show_am_pm == 0 ) {
