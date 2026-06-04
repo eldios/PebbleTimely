@@ -5,6 +5,8 @@
 #include "layout.h"
 #include "calendar.h"
 #include "vibes.h"
+#include "ui.h"
+#include "theme.h"
 #define DEBUGLOG 0
 #define TRANSLOG 0
 #define CONFIG_VERSION "2.6"
@@ -20,7 +22,7 @@
  *
  */
 
-static Window *window;
+Window *window;
 
 static Layer *battery_layer;
 static Layer *datetime_layer;
@@ -271,29 +273,11 @@ struct tm *get_time() {
     return localtime(&tt);
 }
 
-void setColors(GContext* ctx) {
-    window_set_background_color(window, GColorBlack);
-    graphics_context_set_stroke_color(ctx, GColorWhite);
-    graphics_context_set_fill_color(ctx, GColorBlack);
-    graphics_context_set_text_color(ctx, GColorWhite);
-}
 
-void setInvColors(GContext* ctx) {
-    window_set_background_color(window, GColorWhite);
-    graphics_context_set_stroke_color(ctx, GColorBlack);
-    graphics_context_set_fill_color(ctx, GColorWhite);
-    graphics_context_set_text_color(ctx, GColorBlack);
-}
 
 // Highlight colors for the current day's calendar cell. On color platforms the
 // cell gets an accent fill (tune GColorJaegerGreen to taste); on B&W it falls
 // back to the classic white-on-black inversion (identical to setInvColors).
-void setTodayColors(GContext* ctx) {
-    window_set_background_color(window, PBL_IF_COLOR_ELSE(GColorBlack, GColorWhite));
-    graphics_context_set_stroke_color(ctx, PBL_IF_COLOR_ELSE(GColorWhite, GColorBlack));
-    graphics_context_set_fill_color(ctx, PBL_IF_COLOR_ELSE(GColorJaegerGreen, GColorWhite));
-    graphics_context_set_text_color(ctx, PBL_IF_COLOR_ELSE(GColorWhite, GColorBlack));
-}
 
 void weather_layer_update_callback(Layer *me, GContext* ctx) {
   (void)me; // 144x72
