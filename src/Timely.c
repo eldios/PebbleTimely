@@ -754,6 +754,7 @@ void slot_bot_layer_update_callback(Layer *me, GContext* ctx) {
 void battery_layer_update_callback(Layer *me, GContext* ctx) {
 // simply draw the battery outline here - the text is a different layer, and we then 'fill' it with an inverterLayer
   setColors(ctx);
+  if (battery_percent <= 20) { graphics_context_set_stroke_color(ctx, theme_palette().warn); } // low: warn color
 // battery outline
   graphics_draw_rect(ctx, GRect(STAT_BATT_LEFT, STAT_BATT_TOP, STAT_BATT_WIDTH, STAT_BATT_HEIGHT));
 // battery 'nib' terminal
