@@ -240,21 +240,6 @@ static void compute_layout(int w, int h) {
 
 
 
-persist_months_lang lang_months = {
-  .monthsNames = { "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" },
-};
-
-persist_days_lang lang_days = {
-  .DaysOfWeek = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" },
-};
-
-persist_general_lang lang_gen = {
-  .statuses = { "Linked", "NOLINK" },
-  .abbrTime = { "AM", "PM" },
-  .abbrDaysOfWeek = { "Su", "Mo", "Tu", "We", "Th", "Fr", "Sa" },
-  .abbrMonthsNames = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" },
-  .language = "EN",
-};
 
 persist_debug debug = {
   .general = false,     // debugging disabled by default
@@ -367,7 +352,7 @@ void calendar_layer_update_callback(Layer *me, GContext* ctx) {
         
     GFont current = cal_normal;
     int font_vert_offset = 0;
-    if (strcmp(lang_gen.language,"RU") == 0 ) { font_vert_offset = -2; }
+    if (strcmp(lang_gen_get()->language,"RU") == 0 ) { font_vert_offset = -2; }
 
     // generate a light background for the calendar grid
     if (settings_get()->grid) {
@@ -384,21 +369,21 @@ void calendar_layer_update_callback(Layer *me, GContext* ctx) {
       if (col == specialDay) {
         current = cal_bold;
         font_vert_offset = -3;
-        if (strcmp(lang_gen.language,"RU") == 0 ) { font_vert_offset = -2; }
+        if (strcmp(lang_gen_get()->language,"RU") == 0 ) { font_vert_offset = -2; }
       }
       // draw the cell background
     //  graphics_fill_rect(ctx, GRect (CAL_WIDTH * col + CAL_LEFT + CAL_GAP, 0, CAL_WIDTH - CAL_GAP, CAL_HEIGHT - CAL_GAP), 0, GCornerNone);
 
       // draw the cell text
-      graphics_draw_text(ctx, lang_gen.abbrDaysOfWeek[weekday], current, GRect(CAL_WIDTH * col + CAL_LEFT + CAL_GAP, CAL_GAP + font_vert_offset, CAL_WIDTH, CAL_HEIGHT), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL); 
+      graphics_draw_text(ctx, lang_gen_get()->abbrDaysOfWeek[weekday], current, GRect(CAL_WIDTH * col + CAL_LEFT + CAL_GAP, CAL_GAP + font_vert_offset, CAL_WIDTH, CAL_HEIGHT), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL); 
       if (col == specialDay) {
-        if (strcmp(lang_gen.language,"RU") == 0 ) {
+        if (strcmp(lang_gen_get()->language,"RU") == 0 ) {
           // we don't actually have a bold font for this, so we'll use font double-striking to simulate bold
-          graphics_draw_text(ctx, lang_gen.abbrDaysOfWeek[weekday], current, GRect(CAL_WIDTH * col + CAL_LEFT + CAL_GAP + 1, CAL_GAP + font_vert_offset, CAL_WIDTH, CAL_HEIGHT), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL); 
+          graphics_draw_text(ctx, lang_gen_get()->abbrDaysOfWeek[weekday], current, GRect(CAL_WIDTH * col + CAL_LEFT + CAL_GAP + 1, CAL_GAP + font_vert_offset, CAL_WIDTH, CAL_HEIGHT), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL); 
         }
         current = cal_normal;
         font_vert_offset = 0;
-        if (strcmp(lang_gen.language,"RU") == 0 ) { font_vert_offset = -2; }
+        if (strcmp(lang_gen_get()->language,"RU") == 0 ) { font_vert_offset = -2; }
       }
     }
 
@@ -526,39 +511,39 @@ void update_date_text() {
       switch ( settings_get()->date_format ) {
       case 0: // MMMM DD, YYYY (localized)
         strftime(date_text, sizeof(date_text), "%d, %Y", currentTime); // DD, YYYY
-        snprintf(date_string, sizeof(date_string), "%s %s", lang_months.monthsNames[currentTime->tm_mon], date_text); // prefix Month
+        snprintf(date_string, sizeof(date_string), "%s %s", lang_months_get()->monthsNames[currentTime->tm_mon], date_text); // prefix Month
         break;
       case 1: // MMMM DD, 'YY (localized)
         strftime(date_text, sizeof(date_text), "%d, '%y", currentTime); // DD, 'YY
-        snprintf(date_string, sizeof(date_string), "%s %s", lang_months.monthsNames[currentTime->tm_mon], date_text); // prefix Month
+        snprintf(date_string, sizeof(date_string), "%s %s", lang_months_get()->monthsNames[currentTime->tm_mon], date_text); // prefix Month
         break;
       case 2: // Mmm DD, YYYY (localized)
         strftime(date_text, sizeof(date_text), "%d, %Y", currentTime); // DD, YYYY
-        snprintf(date_string, sizeof(date_string), "%s %s", lang_gen.abbrMonthsNames[currentTime->tm_mon], date_text); // prefix Mon
+        snprintf(date_string, sizeof(date_string), "%s %s", lang_gen_get()->abbrMonthsNames[currentTime->tm_mon], date_text); // prefix Mon
         break;
       case 3: // Mmm DD, 'YY (localized)
         strftime(date_text, sizeof(date_text), "%d, '%y", currentTime); // DD, 'YY
-        snprintf(date_string, sizeof(date_string), "%s %s", lang_gen.abbrMonthsNames[currentTime->tm_mon], date_text); // prefix Mon
+        snprintf(date_string, sizeof(date_string), "%s %s", lang_gen_get()->abbrMonthsNames[currentTime->tm_mon], date_text); // prefix Mon
         break;
       case 11: // D MMMM YYYY (localized)
         strftime(date_text, sizeof(date_text), "%d", currentTime); // D
         strftime(date_text_2, sizeof(date_text_2), "%Y", currentTime); // YYYY
-        snprintf(date_string, sizeof(date_string), "%s %s %s", date_text, lang_months.monthsNames[currentTime->tm_mon], date_text_2); // insert Month
+        snprintf(date_string, sizeof(date_string), "%s %s %s", date_text, lang_months_get()->monthsNames[currentTime->tm_mon], date_text_2); // insert Month
         break;
       case 12: // D MMMM 'YY (localized)
         strftime(date_text, sizeof(date_text), "%d", currentTime); // D
         strftime(date_text_2, sizeof(date_text_2), "'%y", currentTime); // YY
-        snprintf(date_string, sizeof(date_string), "%s %s %s", date_text, lang_months.monthsNames[currentTime->tm_mon], date_text_2); // insert Month
+        snprintf(date_string, sizeof(date_string), "%s %s %s", date_text, lang_months_get()->monthsNames[currentTime->tm_mon], date_text_2); // insert Month
         break;
       case 13: // D Mmm YYYY (localized)
         strftime(date_text, sizeof(date_text), "%d", currentTime); // D
         strftime(date_text_2, sizeof(date_text_2), "%Y", currentTime); // YYYY
-        snprintf(date_string, sizeof(date_string), "%s %s %s", date_text, lang_gen.abbrMonthsNames[currentTime->tm_mon], date_text_2); // insert Mon
+        snprintf(date_string, sizeof(date_string), "%s %s %s", date_text, lang_gen_get()->abbrMonthsNames[currentTime->tm_mon], date_text_2); // insert Mon
         break;
       case 14: // D Mmm 'YY (localized)
         strftime(date_text, sizeof(date_text), "%d", currentTime); // D
         strftime(date_text_2, sizeof(date_text_2), "'%y", currentTime); // YY
-        snprintf(date_string, sizeof(date_string), "%s %s %s", date_text, lang_gen.abbrMonthsNames[currentTime->tm_mon], date_text_2); // insert Mon
+        snprintf(date_string, sizeof(date_string), "%s %s %s", date_text, lang_gen_get()->abbrMonthsNames[currentTime->tm_mon], date_text_2); // insert Mon
         break;
       }
     } else { // non-localized date formats, straight strftime function calls
@@ -601,11 +586,11 @@ void update_time_text() {
 }
 
 void update_day_text(TextLayer *which_layer) {
-  text_layer_set_text(which_layer, lang_days.DaysOfWeek[currentTime->tm_wday]);
+  text_layer_set_text(which_layer, lang_days_get()->DaysOfWeek[currentTime->tm_wday]);
 }
 
 void update_month_text(TextLayer *which_layer) {
-  text_layer_set_text(which_layer, lang_months.monthsNames[currentTime->tm_mon]);
+  text_layer_set_text(which_layer, lang_months_get()->monthsNames[currentTime->tm_mon]);
 }
 
 void update_week_text(TextLayer *which_layer) {
@@ -624,9 +609,9 @@ void update_week_text(TextLayer *which_layer) {
 
 void update_ampm_text(TextLayer *which_layer) {
   if (currentTime->tm_hour < 12 ) {
-    text_layer_set_text(which_layer, lang_gen.abbrTime[0]); //  0-11 AM
+    text_layer_set_text(which_layer, lang_gen_get()->abbrTime[0]); //  0-11 AM
   } else {
-    text_layer_set_text(which_layer, lang_gen.abbrTime[1]); // 12-23 PM
+    text_layer_set_text(which_layer, lang_gen_get()->abbrTime[1]); // 12-23 PM
   }
 }
 
@@ -753,7 +738,7 @@ void process_show_ampm() {
 void position_connection_layer() {
   static int connection_vert_offset = 0;
   // potentially adjust the connection position, depending on language/font
-  if ( strcmp(lang_gen.language,"RU") == 0 ) { // Unicode font w/ Cyrillic characters
+  if ( strcmp(lang_gen_get()->language,"RU") == 0 ) { // Unicode font w/ Cyrillic characters
     connection_vert_offset = 2;
   } else { // Standard font
     connection_vert_offset = 0;
@@ -764,7 +749,7 @@ void position_connection_layer() {
 void position_date_layer() {
   static int date_vert_offset = 0;
   // potentially adjust the date position, depending on language/font
-  if ( strcmp(lang_gen.language,"RU") == 0 ) { // Unicode font w/ Cyrillic characters
+  if ( strcmp(lang_gen_get()->language,"RU") == 0 ) { // Unicode font w/ Cyrillic characters
     if (showing_statusbar) {
       date_vert_offset = -4;
     } else {
@@ -783,7 +768,7 @@ void position_date_layer() {
 void position_day_layer() {
   // potentially adjust the day position, depending on language/font
   static int day_vert_offset = 0;
-  if ( strcmp(lang_gen.language,"RU") == 0 ) { // Unicode font w/ Cyrillic characters
+  if ( strcmp(lang_gen_get()->language,"RU") == 0 ) { // Unicode font w/ Cyrillic characters
     day_vert_offset = -2;
   } else { // Standard font
     day_vert_offset = 0;
@@ -1134,7 +1119,7 @@ void generate_vibe(uint32_t vibe_pattern_number) {
 }
 
 void update_connection() {
-  text_layer_set_text(text_connection_layer, bluetooth_connected ? lang_gen.statuses[0] : lang_gen.statuses[1]) ;
+  text_layer_set_text(text_connection_layer, bluetooth_connected ? lang_gen_get()->statuses[0] : lang_gen_get()->statuses[1]) ;
   if (bluetooth_connected) {
     generate_vibe(settings_get()->vibe_pat_connect);  // non-op, by default
     bitmap_layer_set_bitmap(bmp_connection_layer, image_connection_icon);
@@ -1158,7 +1143,7 @@ static void handle_bluetooth(bool connected) {
 }
 
 static void set_unifont() {
-  if ( strcmp(lang_gen.language,"RU") == 0 ) { // Unicode font w/ Cyrillic characters
+  if ( strcmp(lang_gen_get()->language,"RU") == 0 ) { // Unicode font w/ Cyrillic characters
     // set fonts...
     text_layer_set_font(day_layer,unifont_16);
     text_layer_set_font(text_connection_layer, unifont_16);
@@ -1763,7 +1748,7 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     Tuple *chosen_language = dict_find(received, AK_LANGUAGE);
     if (chosen_language != NULL) {
       if (debug.language) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Language is set to %s", chosen_language->value->cstring); }
-      strncpy(lang_gen.language, chosen_language->value->cstring, sizeof(lang_gen.language)-1);
+      strncpy(lang_gen_get()->language, chosen_language->value->cstring, sizeof(lang_gen_get()->language)-1);
       set_unifont();
     }
 
@@ -1772,7 +1757,7 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
       translation = dict_find(received, i);
       if (translation != NULL) {
         if (debug.language) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "translation for key %d is %s", i, translation->value->cstring); }
-        strncpy(lang_gen.abbrDaysOfWeek[i - AK_TRANS_ABBR_SUNDAY], translation->value->cstring, sizeof(lang_gen.abbrDaysOfWeek[i - AK_TRANS_ABBR_SUNDAY])-1);
+        strncpy(lang_gen_get()->abbrDaysOfWeek[i - AK_TRANS_ABBR_SUNDAY], translation->value->cstring, sizeof(lang_gen_get()->abbrDaysOfWeek[i - AK_TRANS_ABBR_SUNDAY])-1);
       }
     }
 
@@ -1781,7 +1766,7 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
       translation = dict_find(received, i);
       if (translation != NULL) {
         if (debug.language) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "translation for key %d is %s", i, translation->value->cstring); }
-        strncpy(lang_days.DaysOfWeek[i - AK_TRANS_SUNDAY], translation->value->cstring, sizeof(lang_days.DaysOfWeek[i - AK_TRANS_SUNDAY])-1);
+        strncpy(lang_days_get()->DaysOfWeek[i - AK_TRANS_SUNDAY], translation->value->cstring, sizeof(lang_days_get()->DaysOfWeek[i - AK_TRANS_SUNDAY])-1);
       }
     }
 
@@ -1790,7 +1775,7 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
       translation = dict_find(received, i);
       if (translation != NULL) {
         if (debug.language) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "translation for key %d is %s", i, translation->value->cstring); }
-        strncpy(lang_gen.abbrMonthsNames[i - AK_TRANS_ABBR_JANUARY], translation->value->cstring, sizeof(lang_gen.abbrMonthsNames[i - AK_TRANS_ABBR_JANUARY])-1);
+        strncpy(lang_gen_get()->abbrMonthsNames[i - AK_TRANS_ABBR_JANUARY], translation->value->cstring, sizeof(lang_gen_get()->abbrMonthsNames[i - AK_TRANS_ABBR_JANUARY])-1);
       }
     }
 
@@ -1799,7 +1784,7 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
       translation = dict_find(received, i);
       if (translation != NULL) {
         if (debug.language) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "translation for key %d is %s", i, translation->value->cstring); }
-        strncpy(lang_months.monthsNames[i - AK_TRANS_JANUARY], translation->value->cstring, sizeof(lang_months.monthsNames[i - AK_TRANS_JANUARY])-1);
+        strncpy(lang_months_get()->monthsNames[i - AK_TRANS_JANUARY], translation->value->cstring, sizeof(lang_months_get()->monthsNames[i - AK_TRANS_JANUARY])-1);
       }
     }
 
@@ -1808,7 +1793,7 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
       translation = dict_find(received, i);
       if (translation != NULL) {
         if (debug.language) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "translation for key %d is %s", i, translation->value->cstring); }
-        strncpy(lang_gen.statuses[i - AK_TRANS_CONNECTED], translation->value->cstring, sizeof(lang_gen.statuses[i - AK_TRANS_CONNECTED])-1);
+        strncpy(lang_gen_get()->statuses[i - AK_TRANS_CONNECTED], translation->value->cstring, sizeof(lang_gen_get()->statuses[i - AK_TRANS_CONNECTED])-1);
       }
     }
     vibe_suppression = true;
@@ -1820,7 +1805,7 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
       translation = dict_find(received, i);
       if (translation != NULL) {
         if (debug.language) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "translation for key %d is %s", i, translation->value->cstring); }
-        strncpy(lang_gen.abbrTime[i - AK_TRANS_TIME_AM], translation->value->cstring, sizeof(lang_gen.abbrTime[i - AK_TRANS_TIME_AM])-1);
+        strncpy(lang_gen_get()->abbrTime[i - AK_TRANS_TIME_AM], translation->value->cstring, sizeof(lang_gen_get()->abbrTime[i - AK_TRANS_TIME_AM])-1);
       }
     }
     
@@ -1829,11 +1814,11 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     int result = 0;
     result = persist_write_data(PK_SETTINGS, settings_get(), sizeof(persist) );
     if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Wrote %d bytes into settings", result); }
-    result = persist_write_data(PK_LANG_GEN, &lang_gen, sizeof(lang_gen) );
+    result = persist_write_data(PK_LANG_GEN, lang_gen_get(), sizeof(persist_general_lang) );
     if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Wrote %d bytes into lang_gen", result); }
-    result = persist_write_data(PK_LANG_MONTHS, &lang_months, sizeof(lang_months) );
+    result = persist_write_data(PK_LANG_MONTHS, lang_months_get(), sizeof(persist_months_lang) );
     if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Wrote %d bytes into lang_months", result); }
-    result = persist_write_data(PK_LANG_DAYS, &lang_days, sizeof(lang_days) );
+    result = persist_write_data(PK_LANG_DAYS, lang_days_get(), sizeof(persist_days_lang) );
     if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Wrote %d bytes into lang_days", result); }
     result = persist_write_data(PK_DEBUGGING, &debug, sizeof(debug) );
     if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Wrote %d bytes into debug", result); }
@@ -1917,13 +1902,13 @@ static void init(void) {
       settings_get()->version = 12;
     }
     if (persist_exists(PK_LANG_GEN)) {
-      persist_read_data(PK_LANG_GEN, &lang_gen, sizeof(lang_gen) );
+      persist_read_data(PK_LANG_GEN, lang_gen_get(), sizeof(persist_general_lang) );
     }
     if (persist_exists(PK_LANG_MONTHS)) {
-      persist_read_data(PK_LANG_MONTHS, &lang_months, sizeof(lang_months) );
+      persist_read_data(PK_LANG_MONTHS, lang_months_get(), sizeof(persist_months_lang) );
     }
     if (persist_exists(PK_LANG_DAYS)) {
-      persist_read_data(PK_LANG_DAYS, &lang_days, sizeof(lang_days) );
+      persist_read_data(PK_LANG_DAYS, lang_days_get(), sizeof(persist_days_lang) );
     }
     if (persist_exists(PK_DEBUGGING)) {
       persist_read_data(PK_DEBUGGING, &debug, sizeof(debug) );

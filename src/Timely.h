@@ -5,24 +5,7 @@
 // Create a struct to hold our persistent settings...
 #include "settings.h"
 
-typedef struct persist_months_lang { // 252 bytes
-  char monthsNames[12][21];       // 252: 10-20 UTF8 characters for each of 12 months
-//                                   252 bytes
-} __attribute__((__packed__)) persist_months_lang;
-
-typedef struct persist_days_lang { // 238 bytes
-  char DaysOfWeek[7][34];         //  238: 16-33 UTF8 characters for each of 7 weekdays
-//                                    238 bytes
-} __attribute__((__packed__)) persist_days_lang;
-
-typedef struct persist_general_lang { // 253 bytes
-  char statuses[2][26];           //  40: 12-25 characters for each of  2 statuses
-  char abbrTime[2][12];           //  24:  5-11 characters for each of  2 abbreviations
-  char abbrDaysOfWeek[7][6];      //  42:  2- 5 characters for each of  7 weekdays abbreviations
-  char abbrMonthsNames[12][11];   // 132:  5-11 characters for each of 12 months abbreviations
-  char language[3];               //   3:  2 characters for language (internal, stored as ascii for convenience)
-//                                   253 bytes
-} __attribute__((__packed__)) persist_general_lang;
+#include "locale.h"
 
 typedef struct persist_debug { // 6 bytes
   bool general;              // debugging messages (general)
