@@ -1,3 +1,9 @@
+var Clay = require('@rebble/clay');
+var clayConfig = require('./config');
+// We render the page with Clay but handle the events ourselves so we can coerce
+// the string-typed select values to integers (the watch reads them as uint8).
+var clay = new Clay(clayConfig, null, { autoHandleEvents: false });
+
 var CLIMACON = {
   'cloud'            : '!',
   'cloud_day'        : '"',
@@ -213,10 +219,6 @@ var YWclimacon= {
   3200 : CLIMACON['cloud_down'], //not available
 };
 
-var options = JSON.parse(localStorage.getItem('timely_options'));
-//console.log('read options: ' + JSON.stringify(options));
-//if (options === null) options = { "default" : "value", "foo" : "bar"};
-
 function getWeatherFromLatLong(latitude, longitude) {
   var response;
   var woeid = -1;
@@ -317,21 +319,7 @@ Pebble.addEventListener("ready", function (e) {
 });
 
 Pebble.addEventListener("showConfiguration", function () {
-    //console.log("Configuration window launching...");
-    var baseURL, pebtok, nocache;
-    baseURL = 'http://www.cyn.org/pebble/timely/';
-    pebtok  = '&pat=' + Pebble.getAccountToken();
-    nocache = '&_=' + new Date().getTime();
-    if (window.localStorage.getItem("timely_options") !== null) {
-        options = JSON.parse(window.localStorage.timely_options);
-    }
-    if (window.localStorage.getItem("version_config") !== null) {
-        Pebble.openURL(baseURL + window.localStorage.version_config + ".php?" + pebtok + nocache);
-        console.log(baseURL + window.localStorage.version_config + ".php?" + pebtok + nocache);
-    } else { // in case we never received the message / new install
-        Pebble.openURL(baseURL + "2.3.0.php?" + pebtok + nocache);
-        console.log(baseURL + "2.3.0.php?" + pebtok + nocache);
-    }
+    Pebble.openURL(clay.generateUrl());
 });
 
 function getWatchVersion() {
@@ -509,34 +497,27 @@ V = waning crescent 0.25 +
     return moon;
 }
 
-function b64_to_utf8( str ) {
-  return decodeURIComponent(escape(base64.decode( str.replace(/ +/g, '+') )));
-}
-
 Pebble.addEventListener("webviewclosed", function (e) {
-    //console.log("Configuration closed");
-    //console.log("Response = " + e.response.length + "   " + e.response);
-    if (e.response !== undefined && e.response !== '' && e.response !== 'CANCELLED') { // user clicked Save/Submit, not Cancel/Done
-        var options, web;
-        options = JSON.parse(b64_to_utf8(e.response));
-        window.localStorage.timely_options = JSON.stringify(options);
-        web = options.web;
-        delete options.web; // remove the 'web' object from our response, which has preferences such as language...
-        options[15] = web.lang; // re-inject the language
-        if (options[10] === 1) { // debugging is on...
-          console.log("Options = " + JSON.stringify(options));
+    if (e && !e.response) { return; } // user cancelled
+
+    var dict = clay.getSettings(e.response); // keyed by messageKey name
+    // Clay selects return their value as a string; the watch reads these keys as
+    // uint8, so coerce pure-integer strings to numbers. Genuine text values (none
+    // in the current page) are left untouched.
+    Object.keys(dict).forEach(function (k) {
+        if (typeof dict[k] === 'string' && /^-?\d+$/.test(dict[k])) {
+            dict[k] = parseInt(dict[k], 10);
         }
-        Pebble.sendAppMessage(options,
-            function (e) {
-                console.log("Successfully delivered message with transactionId=" + e.data.transactionId);
-            },
-            function (e) {
-                console.log("Unable to deliver message with transactionId=" + e.data.transactionId + " Error is: " + e.data.error.message);
-            }
-            );
-    } else if (e.response === 'CANCELLED') {
-        console.log("Android misbehaving on save due to embedded space in e.response... ignoring");
-    }
+    });
+
+    Pebble.sendAppMessage(dict,
+        function (e) {
+            console.log("Delivered config with transactionId=" + e.data.transactionId);
+        },
+        function (e) {
+            console.log("Unable to deliver config: " + e.data.error.message);
+        }
+        );
 });
 
 

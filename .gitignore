@@ -7,3 +7,5 @@ pebble-screenshot*
 
 # Local-only workflow artifacts (brainstorming specs / plans)
 docs/superpowers/
+
+node_modules/
