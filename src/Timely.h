@@ -80,12 +80,7 @@ typedef struct persist_adv_settings { // 243 bytes
   uint8_t slots[10];       // 10 bytes
 } __attribute__((__packed__)) persist_adv_settings;
 
-typedef struct weather_data {
-  int16_t current;            // current temperature
-  char condition[2];          // weather_conditions (mapped to single character in font)
-  int16_t requests;            // requests we've put out since last success
-  int16_t failures;            // failed responses that have come back since last success
-} __attribute__((__packed__)) weather_data;
+#include "weather.h"
 
 char *translate_error(AppMessageResult result);
 struct tm *get_time();

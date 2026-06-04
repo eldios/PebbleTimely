@@ -238,12 +238,6 @@ static void compute_layout(int w, int h) {
 /*
 */
 
-weather_data weather = {
-  .current    = 999,
-  .condition = {'h'},
-  .requests = 0,
-  .failures = 0,
-};
 
 persist settings = {
   .version    = 12,
@@ -388,17 +382,17 @@ void weather_layer_update_callback(Layer *me, GContext* ctx) {
   (void)me; // 144x72
   static char temp_current[] = "N/A  ";
   static char cond_current[] = "0";
-  if (weather.current < 900) {
-    snprintf(temp_current, sizeof(temp_current), "%d\u00b0", weather.current);
+  if (weather_state()->current < 900) {
+    snprintf(temp_current, sizeof(temp_current), "%d\u00b0", weather_state()->current);
   } else {
     snprintf(temp_current, sizeof(temp_current), "N/A");
   }
-  snprintf(cond_current, sizeof(cond_current), "%s", weather.condition);
+  snprintf(cond_current, sizeof(cond_current), "%s", weather_state()->condition);
 
   setColors(ctx);
   graphics_draw_text(ctx, cond_current, climacons, GRect(2,16,34,34), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL); 
   graphics_draw_text(ctx, temp_current, fonts_get_system_font(FONT_KEY_GOTHIC_24), GRect(2,42,36,36), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL); 
-  if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Weather redrawing: %d, %s", weather.current, weather.condition); }
+  if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Weather redrawing: %d, %s", weather_state()->current, weather_state()->condition); }
 }
 
 void splash_layer_update_callback(Layer *me, GContext* ctx) {
@@ -985,8 +979,8 @@ void battery_layer_update_callback(Layer *me, GContext* ctx) {
 }
 
 static void request_weather(void *data) {
-  if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Requesting Weather [%d/%d]", weather.failures, weather.requests); }
-  strncpy(weather.condition, "h", sizeof(weather.condition)-1); // h = updating 'cloud' icon
+  if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Requesting Weather [%d/%d]", weather_state()->failures, weather_state()->requests); }
+  strncpy(weather_state()->condition, "h", sizeof(weather_state()->condition)-1); // h = updating 'cloud' icon
   layer_mark_dirty(weather_layer); // update UI element to indicate we're fetching weather...
   DictionaryIterator *iter;
   AppMessageResult result = app_message_outbox_begin(&iter);
@@ -1001,7 +995,7 @@ static void request_weather(void *data) {
     return;
   }
   app_message_outbox_send();
-  weather.requests++;
+  weather_state()->requests++;
   weather_request = NULL;
 }
 
@@ -1494,7 +1488,7 @@ void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed)
   if (bluetooth_connected && adv_settings.weather_update) {
     if (adv_settings.weather_update && (currentTime->tm_min + 60) % adv_settings.weather_update == 0) {
       weather_request = app_timer_register(1000, &request_weather, NULL);
-    } else if (weather.current == 999 && weather.requests < 5) {
+    } else if (weather_state()->current == 999 && weather_state()->requests < 5) {
       // ANDROIIIIIDRAGE  (or, someone who's got weather enabled but location services disabled)
       if (weather_request == NULL) { weather_request = app_timer_register(1000, &request_weather, NULL); } // for Android's slow JS...
     } 
@@ -1568,16 +1562,16 @@ void in_js_ready_handler(DictionaryIterator *received, void *context) {
 
 void in_weather_handler(DictionaryIterator *received, void *context) {
     Tuple *appkey     = dict_find(received, AK_WEATHER_TEMP);
-    if (appkey != NULL)     { weather.current = appkey->value->int16; }
+    if (appkey != NULL)     { weather_state()->current = appkey->value->int16; }
     appkey = dict_find(received, AK_WEATHER_COND);
-    if (appkey != NULL)     { strncpy(weather.condition, appkey->value->cstring, sizeof(weather.condition)-1); }
+    if (appkey != NULL)     { strncpy(weather_state()->condition, appkey->value->cstring, sizeof(weather_state()->condition)-1); }
     layer_mark_dirty(weather_layer);
-    if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Weather received [%d/%d]: %d, %s", weather.failures, weather.requests, weather.current, weather.condition); }
-    if (weather.current == 999) {
-      weather.failures++;
+    if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Weather received [%d/%d]: %d, %s", weather_state()->failures, weather_state()->requests, weather_state()->current, weather_state()->condition); }
+    if (weather_state()->current == 999) {
+      weather_state()->failures++;
     } else {
-      weather.requests = 0;
-      weather.failures = 0;
+      weather_state()->requests = 0;
+      weather_state()->failures = 0;
     }
 }
 
