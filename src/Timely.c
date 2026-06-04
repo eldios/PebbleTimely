@@ -1037,8 +1037,17 @@ bool dnd_period_check() {
   return dnd_period_active;
 }
 bool hourvibe_period_check() {
-  // TODO - adv_settings_get()->vibe_hour_days  = 0, // Hour Vibe: days active [Su 1, Mo 2, Tu 4, We 8, Th 16, Fr 32, Sa 64 => 0 => 127]
-  vibe_period_active = period_check(adv_settings_get()->vibe_hour_start, adv_settings_get()->vibe_hour_stop, true);
+  // vibe_hour_days is the hourly-vibe mode: 0 off, 1 always, 2 window, 3 follow DND.
+  uint8_t mode = adv_settings_get()->vibe_hour_days;
+  if (mode == 1) {
+    vibe_period_active = true;
+  } else if (mode == 2) {
+    vibe_period_active = period_check(adv_settings_get()->vibe_hour_start, adv_settings_get()->vibe_hour_stop, true);
+  } else if (mode == 3) {
+    vibe_period_active = !dnd_period_check(); // active every hour except during Do Not Disturb
+  } else {
+    vibe_period_active = false;
+  }
   if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Tested vibe period... %d", (int)vibe_period_active); }
   return vibe_period_active;
 }

@@ -45,13 +45,14 @@ function renderSched(id, label, modes, modeVal, fromVal, toVal, note) {
 
 function renderField(f, current) {
   if (f.type === 'vibe-sched') {
-    var vh = Number((current && current.vibe_hour) || 0);
     var vs = Number((current && current.vibe_start) || 0);
     var ve = Number((current && current.vibe_stop) || 0);
-    var vmode = vh === 0 ? 0 : (vs === ve ? 1 : 2);
+    // mode comes from vibe_days; fall back to deriving it from older saves.
+    var vmode = (current && current.vibe_days != null) ? Number(current.vibe_days)
+      : (Number((current && current.vibe_hour) || 0) === 0 ? 0 : (vs === ve ? 1 : 2));
     return renderSched('vibe', 'Hourly vibration',
-      [['Off', 0], ['Always On', 1], ['Time Period', 2]], vmode, vs, ve,
-      'Time Period: From and To must differ.');
+      [['Off', 0], ['Always On', 1], ['Time Period', 2], ['Follow Do Not Disturb', 3]], vmode, vs, ve,
+      'Time Period: From and To must differ. Follow DND: vibrates hourly except during Do Not Disturb.');
   }
   if (f.type === 'dnd-sched') {
     var dm = Number((current && current.dnd_noaccel) || 0);
@@ -156,12 +157,10 @@ function buildConfigPage(spec, current) {
     'var allk=document.querySelectorAll("[data-key]");for(var z=0;z<allk.length;z++){allk[z].addEventListener("change",syncCond);}' +
     'syncCond();' +
     // Derive the watch keys from the scheduled controls; return false to abort.
-    'function augment(o){var v=byId("vibeMode");if(v){var m=+v.value;' +
-    'if(m===0){o.vibe_hour=0;o.vibe_start=0;o.vibe_stop=0;}' +
-    'else if(m===1){o.vibe_hour=1;o.vibe_start=0;o.vibe_stop=0;}' +
-    'else{var f=t2i(byId("vibeFrom").value),t=t2i(byId("vibeTo").value);' +
+    'function augment(o){var v=byId("vibeMode");if(v){var m=+v.value;o.vibe_days=m;o.vibe_hour=(m===0?0:1);' +
+    'if(m===2){var f=t2i(byId("vibeFrom").value),t=t2i(byId("vibeTo").value);' +
     'if(f===t){alert("Hourly vibration: From and To must differ.");return false;}' +
-    'o.vibe_hour=1;o.vibe_start=f;o.vibe_stop=t;}}' +
+    'o.vibe_start=f;o.vibe_stop=t;}else{o.vibe_start=0;o.vibe_stop=0;}}' +
     'var d=byId("dndMode");if(d){var n=+d.value;o.dnd_noaccel=n;' +
     'if(n===2){var f2=t2i(byId("dndFrom").value),t2=t2i(byId("dndTo").value);' +
     'if(f2===t2){alert("Do Not Disturb: From and To must differ.");return false;}' +
