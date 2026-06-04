@@ -3,3 +3,4 @@ build
 .lock-waf*
 pebble-screenshot*
 .*.swp
+.direnv
