@@ -85,16 +85,22 @@ var CLIMACON = {
 };
 
 
-function sendWeather(temp, cond_icon, city) {
+function sendWeather(temp, cond_icon, city, lat, lon) {
   // Day/night (and the clear-night moon glyph) are already resolved by the
   // weather mapping using the provider's is_day flag.
   console.log('Sending Weather: ' + temp + '  ' + cond_icon + '  ' + (city || ''));
-  Pebble.sendAppMessage({
+  var msg = {
     message_type: 106,
     weather_temp: temp,
     weather_cond: cond_icon,
     weather_city: city || '',
-  });
+  };
+  // Coordinates power the sunrise/sunset complications and the Auto theme.
+  if (lat != null && lon != null) {
+    msg.weather_lat = lat.toFixed(2);
+    msg.weather_lon = lon.toFixed(2);
+  }
+  Pebble.sendAppMessage(msg);
 }
 
 var locationOptions = { "timeout": 15000, "maximumAge": 60000, "enableHighAccuracy": false }; // 15 second timeout, allow 1 min cached
@@ -244,7 +250,7 @@ function fetchWeather(latitude, longitude) {
       var temp = Math.round(r.current.temperature_2m);
       var icon = wmoToClimacon(r.current.weather_code, r.current.is_day === 1);
       console.log("Open-Meteo: " + temp + "; code " + r.current.weather_code + "; day " + r.current.is_day);
-      reverseGeocode(latitude, longitude, function(city) { sendWeather(temp, icon, city); });
+      reverseGeocode(latitude, longitude, function(city) { sendWeather(temp, icon, city, latitude, longitude); });
     } catch (e) { console.log("Weather parse error: " + e); }
   };
   req.onerror = function() { console.log("Weather request failed"); };

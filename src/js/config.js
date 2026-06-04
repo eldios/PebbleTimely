@@ -7,12 +7,12 @@ var VIBES = [
   ['Long', 4], ['Min', 5], ['Min 2', 6], ['Ow', 7]
 ];
 
-// Complication menu shared by all three below-time slots (left/middle/right).
+// Complication menu shared by the two slots above the calendar.
 // Values must match update_slot_text() in Timely.c.
 var SLOTS = [
   ['—', 0], ['Day', 1], ['Month', 2], ['Week', 3], ['Timezone', 4], ['AM/PM', 5],
   ['Day of year', 6], ['Days left in year', 7], ['Day of year / left', 8],
-  ['Seconds', 9], ['Location', 10]
+  ['Seconds', 9], ['Location', 10], ['Sunrise', 11], ['Sunset', 12]
 ];
 
 // Date formats; values must match update_date_text() in Timely.c. 255 = custom.

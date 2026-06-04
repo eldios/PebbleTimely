@@ -9,6 +9,7 @@
 #include "ui.h"
 #include "theme.h"
 #include "splash.h"
+#include "suntimes.h"
 #define DEBUGLOG 0
 #define TRANSLOG 0
 #define CONFIG_VERSION "2.6"
@@ -139,6 +140,8 @@ static bool showing_statusbar = true;
 #define AK_WEATHER_COND         108
 #define AK_WEATHER_CITY         109
 #define AK_PHONE_BATTERY        110
+#define AK_WEATHER_LAT          111
+#define AK_WEATHER_LON          112
 
 #define AK_TRANS_ABBR_SUNDAY    500
 #define AK_TRANS_ABBR_MONDAY    501
@@ -494,6 +497,43 @@ void update_location_text(TextLayer *which_layer) {
   text_layer_set_text(which_layer, weather_state()->city);
 }
 
+#ifndef PBL_PLATFORM_APLITE
+// Minimal "[-]int[.frac]" parser (Pebble libc lacks atof).
+static bool tl_parse_coord(const char *s, float *out) {
+  if (!s || !s[0]) return false;
+  int sign = 1; const char *p = s;
+  if (*p == '-') { sign = -1; p++; } else if (*p == '+') { p++; }
+  long ip = 0; float frac = 0.0f, scale = 0.1f; bool any = false;
+  while (*p >= '0' && *p <= '9') { ip = ip * 10 + (*p - '0'); p++; any = true; }
+  if (*p == '.') { p++; while (*p >= '0' && *p <= '9') { frac += (*p - '0') * scale; scale *= 0.1f; p++; any = true; } }
+  if (!any) return false;
+  *out = sign * (ip + frac);
+  return true;
+}
+
+static void sun_time_text(TextLayer *layer, char *buf, bool want_sunset) {
+  float lat, lon, sr, ss;
+  if (currentTime && timezone_offset != TIMEZONE_UNINITIALIZED &&
+      tl_parse_coord(adv_settings_get()->weather_lat, &lat) &&
+      tl_parse_coord(adv_settings_get()->weather_lon, &lon)) {
+    sun_times(lat, lon, currentTime->tm_yday, -timezone_offset / 4.0f, &sr, &ss);
+    float h = want_sunset ? ss : sr;
+    int hh = (int)h, mm = (int)((h - hh) * 60 + 0.5f);
+    if (mm >= 60) { mm -= 60; hh++; }
+    if (hh >= 24) { hh -= 24; }
+    snprintf(buf, 8, "%d:%02d", hh, mm);
+    text_layer_set_text(layer, buf);
+  } else {
+    text_layer_set_text(layer, "--:--"); // no location yet
+  }
+}
+void update_sunrise_text(TextLayer *l) { static char b[8]; sun_time_text(l, b, false); }
+void update_sunset_text(TextLayer *l)  { static char b[8]; sun_time_text(l, b, true); }
+#else
+void update_sunrise_text(TextLayer *l) { text_layer_set_text(l, "--:--"); }
+void update_sunset_text(TextLayer *l)  { text_layer_set_text(l, "--:--"); }
+#endif
+
 char * get_doy_text() {
   static char doy_text[] = "D000";
   strftime(doy_text, sizeof(doy_text), "D%j", currentTime);
@@ -541,6 +581,8 @@ void update_slot_text(TextLayer *layer, uint8_t content) {
   case 8:  update_doy_dliy_text(layer);  break; // Day of year / left (alternating)
   case 9:  update_seconds_text(layer);   break; // Seconds
   case 10: update_location_text(layer);  break; // Weather location
+  case 11: update_sunrise_text(layer);   break; // Sunrise
+  case 12: update_sunset_text(layer);    break; // Sunset
   default: break;                                // 0 = hidden
   }
 }
@@ -1368,6 +1410,15 @@ void in_weather_handler(DictionaryIterator *received, void *context) {
     if (appkey != NULL)     { strncpy(weather_state()->condition, appkey->value->cstring, sizeof(weather_state()->condition)-1); }
     appkey = dict_find(received, AK_WEATHER_CITY);
     if (appkey != NULL)     { strncpy(weather_state()->city, appkey->value->cstring, sizeof(weather_state()->city)-1); }
+    // Coordinates feed the sunrise/sunset complications and the Auto theme.
+    Tuple *lat = dict_find(received, AK_WEATHER_LAT);
+    Tuple *lon = dict_find(received, AK_WEATHER_LON);
+    if (lat != NULL && lon != NULL) {
+      strncpy(adv_settings_get()->weather_lat, lat->value->cstring, sizeof(adv_settings_get()->weather_lat)-1);
+      strncpy(adv_settings_get()->weather_lon, lon->value->cstring, sizeof(adv_settings_get()->weather_lon)-1);
+      persist_write_data(PK_ADV_SETTINGS, adv_settings_get(), sizeof(persist_adv_settings));
+      apply_palette(); // Auto theme may flip with a known location
+    }
     weather_mark_dirty();
     if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Weather received [%d/%d]: %d, %s", weather_state()->failures, weather_state()->requests, weather_state()->current, weather_state()->condition); }
     if (weather_state()->current == 999) {
