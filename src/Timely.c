@@ -303,7 +303,10 @@ struct tm *get_time() {
 
 
 
-void update_date_text() {
+// Format the current date per the configured format into a reusable static
+// buffer (returned). update_date_text() drives the date layer; the "Date"
+// complication uses the same formatter so it can live in any slot.
+char *format_current_date(void) {
 
     //September 11, 2013 => 18 chars, 9 of which could potentially be dual byte utf8 characters
     //123456789012345678
@@ -435,7 +438,11 @@ void update_date_text() {
       snprintf(date_string, sizeof(date_string), "%s", date_text); // straight copy
     }
 
-    text_layer_set_text(date_layer, date_string);
+    return date_string;
+}
+
+void update_date_text() {
+    text_layer_set_text(date_layer, format_current_date());
 }
 
 void update_time_text() {
@@ -648,6 +655,7 @@ void update_slot_text(TextLayer *layer, uint8_t content) {
   case 15: update_wbatt_text(layer);     break; // Watch battery
   case 16: update_pbatt_text(layer);     break; // Phone battery
   case 17: update_conn_text(layer);      break; // Bluetooth connection
+  case 18: text_layer_set_text(layer, format_current_date()); break; // Date
   default: break;                                // 0 = hidden
   }
 }
