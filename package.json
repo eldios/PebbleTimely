@@ -62,6 +62,11 @@
         },
         {
           "type": "png",
+          "name": "IMAGE_BT_16_ICON",
+          "file": "images/bt_16.png"
+        },
+        {
+          "type": "png",
           "name": "IMAGE_HOURVIBE_ICON",
           "file": "images/hourvibe_20_20.png"
         },
@@ -149,6 +154,8 @@
       "weather_lat": 111,
       "weather_lon": 112,
       "clock2_tz": 113,
+      "slot_stat_l": 114,
+      "slot_stat_r": 115,
       "trans_abbr_sunday": 500,
       "trans_abbr_monday": 501,
       "trans_abbr_tuesday": 502,

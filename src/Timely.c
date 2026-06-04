@@ -55,7 +55,8 @@ static BitmapLayer *bmp_phone_layer;   // phone icon next to the phone-battery r
 static GBitmap *image_phone_icon;
 static BitmapLayer *bmp_watch_layer;   // watch icon next to the watch battery
 static GBitmap *image_watch_icon;
-static TextLayer *text_connection_layer;
+static GBitmap *image_bt16_icon;       // 16px Bluetooth glyph for the status-bar slots
+static TextLayer *text_connection_layer; // status-bar slot, left (text)
 static TextLayer *text_battery_layer;
 
 static EffectLayer *inverter_layer;
@@ -147,6 +148,8 @@ static bool showing_statusbar = true;
 #define AK_WEATHER_LAT          111
 #define AK_WEATHER_LON          112
 #define AK_CLOCK2_TZ            113
+#define AK_SLOT_STAT_L         114
+#define AK_SLOT_STAT_R         115
 
 #define AK_TRANS_ABBR_SUNDAY    500
 #define AK_TRANS_ABBR_MONDAY    501
@@ -653,15 +656,57 @@ void process_show_week() { update_slot_text(week_layer, settings_get()->show_wee
 void process_show_day()  { update_slot_text(day_layer,  settings_get()->show_day); }    // MIDDLE
 void process_show_ampm() { update_slot_text(ampm_layer, settings_get()->show_am_pm); }  // RIGHT
 
-void position_connection_layer() {
-  static int connection_vert_offset = 0;
-  // potentially adjust the connection position, depending on language/font
-  if ( strcmp(lang_gen_get()->language,"RU") == 0 ) { // Unicode font w/ Cyrillic characters
-    connection_vert_offset = 2;
-  } else { // Standard font
-    connection_vert_offset = 0;
+// The two status-bar slots also draw from the unified menu; battery/connection
+// content additionally shows a 16px icon (the only contents with a glyph).
+static GBitmap *stat_slot_icon(uint8_t content) {
+  switch (content) {
+  case 15: return image_watch_icon;  // Watch battery
+  case 16: return image_phone_icon;  // Phone battery
+  case 17: return image_bt16_icon;   // Bluetooth
+  default: return NULL;              // text-only complication
   }
-  layer_set_frame( text_layer_get_layer(text_connection_layer), GRect(36, connection_vert_offset, 44, 22) );
+}
+
+// Render one status-bar slot: icon (if any) on the outer edge, value beside it.
+// Left slot is left-aligned with the icon at the far left; right slot is
+// right-aligned with the icon at the far right.
+static void apply_stat_slot(TextLayer *txt, BitmapLayer *icon, uint8_t content, bool is_right) {
+  int half = DEVICE_WIDTH / 2;
+  GBitmap *bmp = stat_slot_icon(content);
+  Layer *il = bitmap_layer_get_layer(icon);
+  if (bmp) {
+    bitmap_layer_set_bitmap(icon, bmp);
+    layer_set_hidden(il, false);
+    if (is_right) {
+      layer_set_frame(il, GRect(DEVICE_WIDTH - 18, 4, 16, 16));
+      layer_set_frame(text_layer_get_layer(txt), GRect(half, 2, DEVICE_WIDTH - 20 - half, 22));
+    } else {
+      layer_set_frame(il, GRect(2, 4, 16, 16));
+      layer_set_frame(text_layer_get_layer(txt), GRect(20, 2, half - 22, 22));
+    }
+  } else {
+    layer_set_hidden(il, true);
+    if (is_right) {
+      layer_set_frame(text_layer_get_layer(txt), GRect(half, 2, DEVICE_WIDTH - 2 - half, 22));
+    } else {
+      layer_set_frame(text_layer_get_layer(txt), GRect(2, 2, half - 4, 22));
+    }
+  }
+  update_slot_text(txt, content);
+}
+
+// Re-apply both status-bar slots (content + icon + position). Cheap; call it
+// whenever the underlying data (battery, connection) or the config changes.
+void refresh_stat_slots(void) {
+  if (!text_connection_layer || !text_battery_layer) { return; } // not built yet
+  apply_stat_slot(text_connection_layer, bmp_phone_layer, settings_get()->slot_stat_l, false);
+  apply_stat_slot(text_battery_layer,    bmp_watch_layer, settings_get()->slot_stat_r, true);
+}
+
+void position_connection_layer() {
+  // Status-bar slots own their own geometry now; re-apply them (also picks up
+  // the current language/font via the value text).
+  refresh_stat_slots();
 }
 
 void position_date_layer() {
@@ -942,9 +987,6 @@ void set_status_charging_icon() {
     chrg_shown = false;
   }
   layer_set_hidden(bitmap_layer_get_layer(bmp_charging_layer), !chrg_shown);
-  // The charging slot sits on top of the watch icon's spot; hide the watch icon
-  // while the slot is in use so they don't overlap.
-  if (bmp_watch_layer) { layer_set_hidden(bitmap_layer_get_layer(bmp_watch_layer), chrg_shown); }
 }
 
 static void toggle_slot_bottom(void *data) {
@@ -958,16 +1000,9 @@ static void toggle_slot_bottom(void *data) {
 }
 
 static void handle_battery(BatteryChargeState charge_state) {
-  static char battery_text[] = "100";
-
   battery_percent = charge_state.charge_percent;
-  uint8_t battery_meter = battery_percent/10*(STAT_BATT_WIDTH-4)/10;
   battery_charging = charge_state.is_charging;
   battery_plugged = charge_state.is_plugged;
-
-  // fill it in with current power
-  layer_set_frame(effect_layer_get_layer(battery_meter_layer), GRect(STAT_BATT_LEFT+2, STAT_BATT_TOP+2, battery_meter, STAT_BATT_HEIGHT-4));
-  layer_set_hidden(effect_layer_get_layer(battery_meter_layer), false);
 
   //if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "battery reading"); }
   if (battery_sending == NULL) {
@@ -978,9 +1013,7 @@ static void handle_battery(BatteryChargeState charge_state) {
 
   set_status_charging_icon();
 
-  snprintf(battery_text, sizeof(battery_text), "%d", charge_state.charge_percent);
-  text_layer_set_text(text_battery_layer, battery_text);
-  layer_mark_dirty(battery_layer);
+  refresh_stat_slots();
   statusbar_visible();
   toggle_statusbar();
   handle_vibe_suppression();
@@ -1030,27 +1063,16 @@ void generate_vibe(uint32_t vibe_pattern_number) {
   }
 }
 
-// Phone-battery readout next to the phone icon. The Bluetooth icon already
-// conveys the link state, so this shows the phone's level (or -- when unknown /
-// disconnected) rather than a "Linked"/"NOLINK" word.
+// Connection/battery now live in the configurable status-bar slots; refreshing
+// them re-renders whatever the user put there.
 void set_connection_text(void) {
-  if (bluetooth_connected && phone_battery_percent >= 0) {
-    snprintf(connection_text_buf, sizeof(connection_text_buf), "%d%%", phone_battery_percent);
-  } else {
-    snprintf(connection_text_buf, sizeof(connection_text_buf), "--");
-  }
-  text_layer_set_text(text_connection_layer, connection_text_buf);
+  refresh_stat_slots();
 }
 
 void update_connection() {
-  set_connection_text();
-  if (bluetooth_connected) {
-    generate_vibe(settings_get()->vibe_pat_connect);  // non-op, by default
-    bitmap_layer_set_bitmap(bmp_connection_layer, image_connection_icon);
-  } else {
-    generate_vibe(settings_get()->vibe_pat_disconnect);  // because, this is bad...
-    bitmap_layer_set_bitmap(bmp_connection_layer, image_noconnection_icon);
-  }
+  generate_vibe(bluetooth_connected ? settings_get()->vibe_pat_connect
+                                     : settings_get()->vibe_pat_disconnect);
+  refresh_stat_slots();
 }
 
 static void handle_bluetooth(bool connected) {
@@ -1099,6 +1121,7 @@ static void apply_palette(void) {
   tint_icon(image_dnd_icon, fg);
   tint_icon(image_phone_icon, fg);
   tint_icon(image_watch_icon, fg);
+  tint_icon(image_bt16_icon, fg);
   if (bmp_connection_layer) { layer_mark_dirty(bitmap_layer_get_layer(bmp_connection_layer)); }
   if (bmp_charging_layer)   { layer_mark_dirty(bitmap_layer_get_layer(bmp_charging_layer)); }
   if (bmp_phone_layer)      { layer_mark_dirty(bitmap_layer_get_layer(bmp_phone_layer)); }
@@ -1235,27 +1258,31 @@ static void window_load(Window *window) {
   image_hourvibe_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_HOURVIBE_ICON);
   image_dnd_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_DONOTDISTURB_ICON);
 
-  // Small icons that label the two battery readouts: phone (left, by its %) and
-  // watch (right, by the watch battery).
+  // Status-bar slot icons (16px): one per slot, bitmap chosen by slot content.
   image_phone_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_PHONE_ICON);
-  bmp_phone_layer = bitmap_layer_create( GRect(18, 4, 16, 16) );
+  image_watch_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_WATCH_ICON);
+  image_bt16_icon  = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BT_16_ICON);
+
+  bmp_phone_layer = bitmap_layer_create( GRect(2, 4, 16, 16) ); // left slot icon
   bitmap_layer_set_compositing_mode(bmp_phone_layer, GCompOpSet);
-  bitmap_layer_set_bitmap(bmp_phone_layer, image_phone_icon);
   layer_add_child(statusbar, bitmap_layer_get_layer(bmp_phone_layer));
 
-  image_watch_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_WATCH_ICON);
-  bmp_watch_layer = bitmap_layer_create( GRect(STAT_BATT_LEFT - 18, 4, 16, 16) );
+  bmp_watch_layer = bitmap_layer_create( GRect(DEVICE_WIDTH - 18, 4, 16, 16) ); // right slot icon
   bitmap_layer_set_compositing_mode(bmp_watch_layer, GCompOpSet);
-  bitmap_layer_set_bitmap(bmp_watch_layer, image_watch_icon);
   layer_add_child(statusbar, bitmap_layer_get_layer(bmp_watch_layer));
+
+  // The old fixed BT icon is retired (Bluetooth is now a slot option).
+  layer_set_hidden(bitmap_layer_get_layer(bmp_connection_layer), true);
 
   dnd_period_check();
   hourvibe_period_check();
   set_status_charging_icon();
 
+  // Graphical battery meter retired: battery now shows as a slot (text + icon).
   battery_layer = layer_create(stat_bounds);
   layer_set_update_proc(battery_layer, battery_layer_update_callback);
   layer_add_child(statusbar, battery_layer);
+  layer_set_hidden(battery_layer, true);
 
   datetime_layer = layer_create(slot_top_bounds);
   layer_set_update_proc(datetime_layer, datetime_layer_update_callback);
@@ -1310,17 +1337,17 @@ static void window_load(Window *window) {
 
   update_datetime_subtext();
 
-  text_connection_layer = text_layer_create( GRect(20+STAT_BT_ICON_LEFT, 0, 72, 22) ); // see position_connection_layer()
+  // Status-bar slots: left (value, left-aligned) and right (value, right-aligned);
+  // apply_stat_slot() sets their frames based on whether the content has an icon.
+  text_connection_layer = text_layer_create( GRect(20, 2, DEVICE_WIDTH/2 - 22, 22) ); // left slot
   set_layer_attr_sfont(text_connection_layer, FONT_KEY_GOTHIC_18, GTextAlignmentLeft);
-  update_connection();
-  position_connection_layer(); // depends on font/language
   layer_add_child(statusbar, text_layer_get_layer(text_connection_layer));
 
-  text_battery_layer = text_layer_create( GRect(STAT_BATT_LEFT, STAT_BATT_TOP-2, STAT_BATT_WIDTH, STAT_BATT_HEIGHT) );
-  set_layer_attr_sfont(text_battery_layer, FONT_KEY_GOTHIC_14, GTextAlignmentCenter);
-  text_layer_set_text(text_battery_layer, "-");
-
+  text_battery_layer = text_layer_create( GRect(DEVICE_WIDTH/2, 2, DEVICE_WIDTH/2 - 20, 22) ); // right slot
+  set_layer_attr_sfont(text_battery_layer, FONT_KEY_GOTHIC_18, GTextAlignmentRight);
   layer_add_child(statusbar, text_layer_get_layer(text_battery_layer));
+
+  refresh_stat_slots(); // fill both slots (content + icon + position)
 
   set_unifont();
   apply_palette();
@@ -1376,6 +1403,7 @@ static void window_unload(Window *window) {
   bitmap_layer_destroy(bmp_watch_layer);
   gbitmap_destroy(image_phone_icon);
   gbitmap_destroy(image_watch_icon);
+  gbitmap_destroy(image_bt16_icon);
   layer_destroy(slot_bot);
   layer_destroy(slot_top);
   layer_destroy(statusbar);
@@ -1406,6 +1434,7 @@ void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed)
   *currentTime = *tick_time;
   apply_palette();
   update_time_text();
+  refresh_stat_slots(); // keep time-based status-bar slots current
   if ( currentTime->tm_min % 10 == 0) {
     dnd_period_check();
     hourvibe_period_check();
@@ -1641,6 +1670,13 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
         layer_set_hidden(text_layer_get_layer(ampm_layer), true);
       }
     }
+
+    // Status-bar slots (left/right) — configurable like the rest.
+    Tuple *slot_stat_l = dict_find(received, AK_SLOT_STAT_L);
+    if (slot_stat_l != NULL) { settings_get()->slot_stat_l = slot_stat_l->value->uint8; }
+    Tuple *slot_stat_r = dict_find(received, AK_SLOT_STAT_R);
+    if (slot_stat_r != NULL) { settings_get()->slot_stat_r = slot_stat_r->value->uint8; }
+    if (slot_stat_l != NULL || slot_stat_r != NULL) { refresh_stat_slots(); }
 
     if (need_second_tick_handler() != seconds_shown) {
       switch_tick_handler();

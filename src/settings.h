@@ -11,9 +11,11 @@ typedef struct persist { // 18 bytes
   uint8_t vibe_hour;              // vibrate at the top of the hour?
   uint8_t dayOfWeekOffset;        // first day of our week
   uint8_t date_format;            // date format
-  uint8_t show_am_pm;             // Show AM/PM below time
-  uint8_t show_day;               // Show day name below time
-  uint8_t show_week;              // Show week number below time
+  uint8_t show_am_pm;             // Above-calendar slot, right (complication content)
+  uint8_t show_day;               // (retired middle slot)
+  uint8_t show_week;              // Above-calendar slot, left (complication content)
+  uint8_t slot_stat_l;            // Status bar slot, left (complication content)
+  uint8_t slot_stat_r;            // Status bar slot, right (complication content)
   uint8_t week_format;            // week format (calculation, e.g. ISO 8601)
   uint8_t vibe_pat_disconnect;    // vibration pattern for disconnect
   uint8_t vibe_pat_connect;       // vibration pattern for connect

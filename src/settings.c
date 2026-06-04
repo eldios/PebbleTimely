@@ -11,6 +11,9 @@ static persist s_settings = {
   .show_am_pm  = 0,
   .show_day    = 0,
   .show_week   = 0,
+  .slot_stat_l = 16, // status bar left: phone battery (preserves prior look)
+  .slot_stat_r = 15, // status bar right: watch battery
+
   .week_format = 0, // ISO 8601
   .vibe_pat_disconnect = 2, // double vibe
   .vibe_pat_connect = 0, // no vibe
