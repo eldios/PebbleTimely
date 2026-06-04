@@ -33,7 +33,7 @@ typedef struct persist_adv_settings { // 243 bytes
   uint8_t showDate;        //  1 byte
   uint8_t DND_start;       //  1 byte
   uint8_t DND_stop;        //  1 byte
-  uint8_t DND_accel_off;   //  1 byte
+  uint8_t dnd_mode;        //  1 byte: 0 off, 1 follow watch Quiet Time, 2 app window
   uint8_t vibe_hour_start; //  1 byte
   uint8_t vibe_hour_stop;  //  1 byte
   uint8_t vibe_hour_days;  //  1 byte

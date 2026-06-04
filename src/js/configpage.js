@@ -20,7 +20,47 @@ function incrToTime(incr) {
   return pad2(Math.floor(incr / 6)) + ':' + pad2((incr % 6) * 10);
 }
 
+function selOptions(options, val) {
+  var s = '';
+  for (var i = 0; i < options.length; i++) {
+    s += '<option value="' + esc(options[i][1]) + '"' +
+      (Number(val) === Number(options[i][1]) ? ' selected' : '') + '>' + esc(options[i][0]) + '</option>';
+  }
+  return s;
+}
+
+// A "scheduled" control: a mode select plus a From/To window (shown only in the
+// time-period mode). The window inputs carry no data-key; app.js derives the
+// watch keys from them in augment() so equal From/To can be rejected. `id` is
+// "vibe" or "dnd" — augment() knows how each maps to message keys.
+function renderSched(id, label, modes, modeVal, fromVal, toVal, note) {
+  var h = '<label class="row"><span>' + esc(label) + '</span><select id="' + id + 'Mode">' +
+    selOptions(modes, modeVal) + '</select></label>';
+  if (note) { h += '<p class="note">' + esc(note) + '</p>'; }
+  h += '<div id="' + id + 'Window">' +
+    '<label class="row"><span>From</span><input type="time" id="' + id + 'From" value="' + incrToTime(fromVal) + '"></label>' +
+    '<label class="row"><span>To</span><input type="time" id="' + id + 'To" value="' + incrToTime(toVal) + '"></label></div>';
+  return h;
+}
+
 function renderField(f, current) {
+  if (f.type === 'vibe-sched') {
+    var vh = Number((current && current.vibe_hour) || 0);
+    var vs = Number((current && current.vibe_start) || 0);
+    var ve = Number((current && current.vibe_stop) || 0);
+    var vmode = vh === 0 ? 0 : (vs === ve ? 1 : 2);
+    return renderSched('vibe', 'Hourly vibration',
+      [['Off', 0], ['Always On', 1], ['Time Period', 2]], vmode, vs, ve,
+      'Time Period: From and To must differ.');
+  }
+  if (f.type === 'dnd-sched') {
+    var dm = Number((current && current.dnd_noaccel) || 0);
+    var ds = Number((current && current.dnd_start) || 0);
+    var de = Number((current && current.dnd_stop) || 0);
+    return renderSched('dnd', 'Mode',
+      [['Off', 0], ['Follow watch', 1], ['Time period', 2]], dm, ds, de,
+      'Follow watch uses the system Quiet Time. Time period: From and To must differ.');
+  }
   var cur = (current && current[f.key] != null) ? current[f.key] : f.def;
   var attrs = 'data-key="' + esc(f.key) + '"';
   var control;
@@ -99,10 +139,28 @@ function buildConfigPage(spec, current) {
     'if(t==="time"){var p=(e.value||"0:0").split(":");' +
     'return (parseInt(p[0],10)||0)*6+Math.floor((parseInt(p[1],10)||0)/10);}' +
     'return Number(e.value);}' +
+    'function t2i(v){var p=(v||"0:0").split(":");return (parseInt(p[0],10)||0)*6+Math.floor((parseInt(p[1],10)||0)/10);}' +
+    'function byId(x){return document.getElementById(x);}' +
+    // The From/To window is only relevant in mode 2 (time period); hide it otherwise.
+    'function sync(id){var s=byId(id+"Mode"),w=byId(id+"Window");if(s&&w)w.style.display=(+s.value===2?"":"none");}' +
+    'function wire(id){var s=byId(id+"Mode");if(s){s.onchange=function(){sync(id);};sync(id);}}' +
+    'wire("vibe");wire("dnd");' +
+    // Derive the watch keys from the scheduled controls; return false to abort.
+    'function augment(o){var v=byId("vibeMode");if(v){var m=+v.value;' +
+    'if(m===0){o.vibe_hour=0;o.vibe_start=0;o.vibe_stop=0;}' +
+    'else if(m===1){o.vibe_hour=1;o.vibe_start=0;o.vibe_stop=0;}' +
+    'else{var f=t2i(byId("vibeFrom").value),t=t2i(byId("vibeTo").value);' +
+    'if(f===t){alert("Hourly vibration: From and To must differ.");return false;}' +
+    'o.vibe_hour=1;o.vibe_start=f;o.vibe_stop=t;}}' +
+    'var d=byId("dndMode");if(d){var n=+d.value;o.dnd_noaccel=n;' +
+    'if(n===2){var f2=t2i(byId("dndFrom").value),t2=t2i(byId("dndTo").value);' +
+    'if(f2===t2){alert("Do Not Disturb: From and To must differ.");return false;}' +
+    'o.dnd_start=f2;o.dnd_stop=t2;}else{o.dnd_start=0;o.dnd_stop=0;}}return true;}' +
     'document.getElementById("cancel").onclick=function(){document.location=RET;};' +
     'document.getElementById("save").onclick=function(){var o={},' +
     'els=document.querySelectorAll("[data-key]");for(var i=0;i<els.length;i++){' +
     'o[els[i].getAttribute("data-key")]=val(els[i]);}' +
+    'if(augment(o)===false)return;' +
     'document.location=RET+encodeURIComponent(JSON.stringify(o));};';
   return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width,initial-scale=1">' +

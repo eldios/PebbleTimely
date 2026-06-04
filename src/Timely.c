@@ -1077,8 +1077,15 @@ bool period_check(uint8_t start_incr, uint8_t stop_incr, bool retval_on_equal) {
 }
 
 bool dnd_period_check() {
-  // TODO - adv_settings_get()->DND_accel_off = 0,   // Do Not Disturb: disable accelerometer polling during DND?
-  dnd_period_active = period_check(adv_settings_get()->DND_start, adv_settings_get()->DND_stop, false);
+  // dnd_mode: 0 off, 1 follow the watch's Quiet Time, 2 use the app's own window.
+  uint8_t mode = adv_settings_get()->dnd_mode;
+  if (mode == 1) {
+    dnd_period_active = quiet_time_is_active();
+  } else if (mode == 2) {
+    dnd_period_active = period_check(adv_settings_get()->DND_start, adv_settings_get()->DND_stop, false);
+  } else {
+    dnd_period_active = false;
+  }
   if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Tested DND period... %d", (int)dnd_period_active); }
   return dnd_period_active;
 }
@@ -1580,9 +1587,9 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     appkey = dict_find(received, AK_DND_STOP);
     if (appkey != NULL) { adv_settings_get()->DND_stop = appkey->value->uint8; }
 
-    // AK_DND_NOACCEL == [perhaps] disable accelerometer during DND // TODO, UNUSED
+    // AK_DND_NOACCEL == DND mode (0 off, 1 follow watch Quiet Time, 2 app window)
     appkey = dict_find(received, AK_DND_NOACCEL);
-    if (appkey != NULL) { adv_settings_get()->DND_accel_off = appkey->value->uint8; }
+    if (appkey != NULL) { adv_settings_get()->dnd_mode = appkey->value->uint8; }
 
     // AK_VIBE_START == period start, VIBE
     appkey = dict_find(received, AK_VIBE_START);

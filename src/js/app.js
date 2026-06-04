@@ -403,8 +403,8 @@ function fetchOWMWeather(latitude, longitude) {
   var req = new XMLHttpRequest();
 //http://api.openweathermap.org/data/2.5/weather?lat=35.8415051596573&lon=-78.55771335780486&cnt=1&units=metric
 //http://api.openweathermap.org/data/2.5/weather?lat=35.8415051596573&lon=-78.55771335780486&cnt=1&units=imperial
-  var units = "imperial";
-  if (weatherFormat === 1) { units = "metric"; }
+  // weather_fmt: 0 = Celsius (metric), 1 = Fahrenheit (imperial).
+  var units = (weatherFormat === 1) ? "imperial" : "metric";
   req.open('GET', "http://api.openweathermap.org/data/2.5/weather?" +
     "lat=" + latitude + "&lon=" + longitude + "&appid=fdc43ca42ea6a45d9c73a810f840aa55" + "&cnt=1" + "&units=" + units, true);
   req.onload = function(e) {

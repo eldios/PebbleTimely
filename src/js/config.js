@@ -102,21 +102,16 @@ module.exports = [
     title: 'Vibration',
     open: false,
     fields: [
-      { key: 'vibe_hour', label: 'Hourly', type: 'select', def: 0, options: VIBES },
+      { type: 'vibe-sched' },
       { key: 'vibe_pat_disconnect', label: 'On disconnect', type: 'select', def: 2, options: VIBES },
-      { key: 'vibe_pat_connect', label: 'On reconnect', type: 'select', def: 0, options: VIBES },
-      { key: 'vibe_start', label: 'Hourly active from', type: 'time', def: 0 },
-      { key: 'vibe_stop', label: 'Hourly active until', type: 'time', def: 0,
-        note: 'Equal start/end = active all day.' }
+      { key: 'vibe_pat_connect', label: 'On reconnect', type: 'select', def: 0, options: VIBES }
     ]
   },
   {
     title: 'Do Not Disturb',
     open: false,
     fields: [
-      { key: 'dnd_start', label: 'From', type: 'time', def: 0 },
-      { key: 'dnd_stop', label: 'Until', type: 'time', def: 0,
-        note: 'Equal start/end = disabled. Silences connection vibrations.' }
+      { type: 'dnd-sched' }
     ]
   },
   {
