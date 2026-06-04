@@ -1,24 +1,60 @@
-# Host-side unit tests for the pure modules in src/ (no Pebble SDK).
-# Equivalent recipes in the Makefile; tools provided by the flake dev shell.
-cc       := env_var_or_default("CC", "cc")
-cflags   := "-I src -I tests -Wall -Wextra -std=c11"
-build    := "build"
-test_bin := build / "test_suite"
+# Dev tasks for TimelyNG. Equivalent recipes exist in the Makefile.
+#   Host unit tests:        run inside `nix develop .#test`
+#   Pebble app + emulator:  run inside `nix develop`
+
+cc     := env_var_or_default("CC", "cc")
+cflags := "-I src -I tests -Wall -Wextra -std=c11"
+build  := "build"
+emu    := env_var_or_default("EMU", "emery")   # aplite|basalt|chalk|diorite|emery|flint
+shot   := build / ("screenshot-" + emu + ".png")
 test_src := "tests/*.c src/timefmt.c src/layout.c src/calendar.c src/vibes.c"
 
-# build + run the unit-test suite
-test: build-tests
-    ./{{test_bin}}
+# list the available recipes
+default:
+    @just --list
 
-# build + run the suite, emitting a JUnit XML report
-test-xml: build-tests
-    ./{{test_bin}} --output={{build}}/test-results.xml
+## ---- host unit tests ----
+test: _build-tests
+    ./{{build}}/test_suite
 
-# compile the test binary
-build-tests:
+test-xml: _build-tests
+    ./{{build}}/test_suite --output={{build}}/test-results.xml
+
+_build-tests:
     mkdir -p {{build}}
-    {{cc}} {{cflags}} {{test_src}} -o {{test_bin}}
+    {{cc}} {{cflags}} {{test_src}} -o {{build}}/test_suite
 
-# remove host test artifacts
-clean:
-    rm -f {{test_bin}} {{build}}/test-results.xml
+test-clean:
+    rm -f {{build}}/test_suite {{build}}/test-results.xml
+
+## ---- Pebble app + emulator ----
+# compile the .pbw
+build:
+    pebble build
+
+# build + (re)install on the emulator (EMU=emery by default)
+run: build
+    pebble install --emulator {{emu}}
+
+# build + install + grab a screenshot to build/screenshot-<emu>.png
+shot: build
+    pebble install --emulator {{emu}}
+    sleep 4
+    pebble screenshot {{shot}} --no-open
+    @echo "saved {{shot}}"
+
+# stream app logs from the emulator
+logs:
+    pebble logs --emulator {{emu}}
+
+# stop the running emulator
+kill:
+    pebble kill
+
+# pebble clean (forces SDK reconfigure)
+app-clean:
+    pebble clean
+
+# install the Pebble SDK (first-time setup)
+sdk:
+    pebble sdk install latest
