@@ -42,9 +42,10 @@ var MON_LABEL = ['January', 'February', 'March', 'April', 'May', 'June',
                  'July', 'August', 'September', 'October', 'November', 'December'];
 var MON_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+// Editable translation strings. The language selector (see configpage.js) fills
+// these from a built-in table; they are only shown for manual editing when the
+// language is set to Custom (langCustom flag).
 var translations = [
-  { key: 'language', label: 'Language code', type: 'text', def: 'EN', max: 2,
-    note: 'Stored on the watch; the strings below are what actually localize it.' },
   { key: 'trans_connected', label: 'Connected', type: 'text', def: 'Linked', max: 9 },
   { key: 'trans_disconnected', label: 'Disconnected', type: 'text', def: 'NOLINK', max: 9 },
   { key: 'trans_time_am', label: 'AM', type: 'text', def: 'AM', max: 6 },
@@ -56,6 +57,7 @@ var translations = [
   .concat(textFields(MON.map(function (m) { return 'trans_abbr_' + m; }),
     MON_LABEL.map(function (l) { return l + ' (abbr)'; }), MON_ABBR, 3))
   .concat(textFields(MON.map(function (m) { return 'trans_' + m; }), MON_LABEL, MON_LABEL, 11));
+translations.forEach(function (f) { f.langCustom = true; });
 
 module.exports = [
   {
@@ -131,9 +133,9 @@ module.exports = [
     ]
   },
   {
-    title: 'Language & translations',
+    title: 'Language',
     open: false,
-    fields: translations
+    fields: [{ type: 'lang-sel' }].concat(translations)
   },
   {
     title: 'Advanced',

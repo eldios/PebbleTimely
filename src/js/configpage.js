@@ -20,6 +20,30 @@ function incrToTime(incr) {
   return pad2(Math.floor(incr / 6)) + ':' + pad2((incr % 6) * 10);
 }
 
+// Built-in translation tables (keyed by message key) for the language selector.
+function langTable(months, abbrM, days, abbrD, conn, disc) {
+  var DOW = ['sunday', 'monday', 'tuesday', 'wedsday', 'thursday', 'friday', 'saturday'];
+  var MON = ['january', 'february', 'march', 'april', 'may', 'june',
+             'july', 'august', 'september', 'october', 'november', 'december'];
+  var t = { trans_time_am: 'AM', trans_time_pm: 'PM', trans_connected: conn, trans_disconnected: disc };
+  for (var i = 0; i < 12; i++) { t['trans_' + MON[i]] = months[i]; t['trans_abbr_' + MON[i]] = abbrM[i]; }
+  for (var j = 0; j < 7; j++) { t['trans_' + DOW[j]] = days[j]; t['trans_abbr_' + DOW[j]] = abbrD[j]; }
+  return t;
+}
+var LANGS = {
+  EN: langTable(
+    ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+    ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+    ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+    ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'], 'Linked', 'NOLINK'),
+  IT: langTable(
+    ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'],
+    ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'],
+    ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'],
+    ['Do', 'Lu', 'Ma', 'Me', 'Gi', 'Ve', 'Sa'], 'Connesso', 'Assente')
+};
+var LANG_OPTIONS = [['Follow system', 'system'], ['English', 'EN'], ['Italiano', 'IT'], ['Custom', 'custom']];
+
 function selOptions(options, val) {
   var s = '';
   for (var i = 0; i < options.length; i++) {
@@ -62,6 +86,17 @@ function renderField(f, current) {
       [['Off', 0], ['Follow watch', 1], ['Time period', 2]], dm, ds, de,
       'Follow watch uses the system Quiet Time. Time period: From and To must differ.');
   }
+  if (f.type === 'lang-sel') {
+    var lc = (current && current.language) ? String(current.language).toUpperCase() : 'EN';
+    var sel = LANGS[lc] ? lc : 'custom'; // known language -> that; else Custom (keep existing strings)
+    var opts = '';
+    for (var li = 0; li < LANG_OPTIONS.length; li++) {
+      opts += '<option value="' + esc(LANG_OPTIONS[li][1]) + '"' +
+        (LANG_OPTIONS[li][1] === sel ? ' selected' : '') + '>' + esc(LANG_OPTIONS[li][0]) + '</option>';
+    }
+    return '<label class="row"><span>Language</span><select id="langSel">' + opts + '</select></label>' +
+      '<p class="note">Pick a language to fill the strings below, or Custom to edit them by hand.</p>';
+  }
   var cur = (current && current[f.key] != null) ? current[f.key] : f.def;
   var attrs = 'data-key="' + esc(f.key) + '"';
   var control;
@@ -96,6 +131,7 @@ function renderField(f, current) {
     row = '<div class="cond" data-wkey="' + esc(f.showWhen.key) + '" data-wval="' +
       esc(f.showWhen.val) + '">' + row + '</div>';
   }
+  if (f.langCustom) { row = '<div class="langcustom">' + row + '</div>'; }
   return row;
 }
 
@@ -141,9 +177,10 @@ function buildConfigPage(spec, current) {
     body += '</details>';
   }
   // Keys derived from the scheduled (vibe/dnd) controls also need a baseline.
-  var derived = ['vibe_days', 'vibe_hour', 'vibe_start', 'vibe_stop', 'dnd_noaccel', 'dnd_start', 'dnd_stop'];
+  var derived = ['vibe_days', 'vibe_hour', 'vibe_start', 'vibe_stop', 'dnd_noaccel', 'dnd_start', 'dnd_stop', 'language'];
   for (var d2 = 0; d2 < derived.length; d2++) {
-    baseline[derived[d2]] = (current[derived[d2]] != null) ? current[derived[d2]] : 0;
+    var dflt = (derived[d2] === 'language') ? 'EN' : 0;
+    baseline[derived[d2]] = (current[derived[d2]] != null) ? current[derived[d2]] : dflt;
   }
   var script =
     // Read return_to from the full href: data:/file: URIs do not populate
@@ -153,6 +190,14 @@ function buildConfigPage(spec, current) {
     'return m?decodeURIComponent(m[1]):d;}' +
     'var RET=qp("return_to","pebblejs://close#");' +
     'var BASELINE=' + JSON.stringify(baseline) + ';' +
+    'var LANGS=' + JSON.stringify(LANGS) + ';' +
+    // Language selector: resolve the chosen code, fill the (hidden) translation
+    // fields from the table, and toggle the Custom editor.
+    'function langResolve(v){if(v==="system"){var n=(navigator.language||"en").slice(0,2).toUpperCase();return LANGS[n]?n:"EN";}if(v==="custom")return (BASELINE.language||"EN");return v;}' +
+    'function langFill(code){var t=LANGS[code];if(!t)return;for(var k in t){var e=document.querySelector(\'[data-key="\'+k+\'"]\');if(e)e.value=t[k];}}' +
+    'function langCustomShow(on){var cs=document.querySelectorAll(".langcustom");for(var i=0;i<cs.length;i++)cs[i].style.display=on?"":"none";}' +
+    'function onLang(){var s=byId("langSel");if(!s)return;var v=s.value;if(v==="custom"){langCustomShow(true);}else{langCustomShow(false);langFill(langResolve(v));}}' +
+    'function wireLang(){var s=byId("langSel");if(s){s.onchange=onLang;onLang();}}' +
     'function val(e){var t=e.getAttribute("data-type");' +
     'if(t==="bool")return e.checked?1:0;' +
     'if(t==="str")return e.value;' +
@@ -164,7 +209,7 @@ function buildConfigPage(spec, current) {
     // The From/To window is only relevant in mode 2 (time period); hide it otherwise.
     'function sync(id){var s=byId(id+"Mode"),w=byId(id+"Window");if(s&&w)w.style.display=(+s.value===2?"":"none");}' +
     'function wire(id){var s=byId(id+"Mode");if(s){s.onchange=function(){sync(id);};sync(id);}}' +
-    'wire("vibe");wire("dnd");' +
+    'wire("vibe");wire("dnd");wireLang();' +
     // Conditional fields (.cond): shown only when their source control has the value.
     'function syncCond(){var cs=document.querySelectorAll(".cond");for(var i=0;i<cs.length;i++){' +
     'var c=cs[i],src=document.querySelector(\'[data-key="\'+c.getAttribute("data-wkey")+\'"]\');' +
@@ -179,7 +224,8 @@ function buildConfigPage(spec, current) {
     'var d=byId("dndMode");if(d){var n=+d.value;o.dnd_noaccel=n;' +
     'if(n===2){var f2=t2i(byId("dndFrom").value),t2=t2i(byId("dndTo").value);' +
     'if(f2===t2){alert("Do Not Disturb: From and To must differ.");return false;}' +
-    'o.dnd_start=f2;o.dnd_stop=t2;}else{o.dnd_start=0;o.dnd_stop=0;}}return true;}' +
+    'o.dnd_start=f2;o.dnd_stop=t2;}else{o.dnd_start=0;o.dnd_stop=0;}}' +
+    'var ls=byId("langSel");if(ls){o.language=langResolve(ls.value);}return true;}' +
     'document.getElementById("cancel").onclick=function(){document.location=RET;};' +
     'document.getElementById("save").onclick=function(){var o={},' +
     'els=document.querySelectorAll("[data-key]");for(var i=0;i<els.length;i++){' +
