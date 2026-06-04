@@ -101,7 +101,8 @@ static void calendar_render(Layer *me, GContext* ctx) {
         // vertically center the number in its cell (Pebble top-aligns text)
         GSize ts = graphics_text_layout_get_content_size(date_text, current,
                      GRect(0, 0, CAL_WIDTH, CAL_HEIGHT), GTextOverflowModeWordWrap, GTextAlignmentCenter);
-        int ty = CAL_HEIGHT * week + (CAL_HEIGHT - CAL_GAP - ts.h) / 2;
+        // ts.h includes the font line leading, which biases low; nudge up ~3px.
+        int ty = CAL_HEIGHT * week + (CAL_HEIGHT - CAL_GAP - ts.h) / 2 - 3;
         graphics_draw_text(ctx, date_text, current, GRect(CAL_WIDTH * col + CAL_LEFT, ty, CAL_WIDTH, CAL_HEIGHT), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
 
         if ( row == specialRow && col == specialDay) {
