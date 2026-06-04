@@ -26,6 +26,7 @@ static void calendar_render(Layer *me, GContext* ctx) {
                                   adv_settings_get()->week_pattern);
     int *calendar = grid.days;
     int specialDay = grid.special_col;
+    Palette pal = theme_palette();
     if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Calendar - sCol: %d, sRow: %d", grid.special_col, grid.special_row); }
 
 // ---------------------------
@@ -50,6 +51,8 @@ static void calendar_render(Layer *me, GContext* ctx) {
       // Adjust labels by specified offset
       int weekday = col + settings_get()->dayOfWeekOffset;
       if (weekday > 6) { weekday -= 7; }
+      bool weekend = (weekday == 0 || weekday == 6); // Sun / Sat
+      graphics_context_set_text_color(ctx, weekend ? pal.weekend : pal.fg);
 
       if (col == specialDay) {
         current = cal_bold;
@@ -95,6 +98,11 @@ static void calendar_render(Layer *me, GContext* ctx) {
         // draw the cell background
         graphics_fill_rect(ctx, GRect (CAL_WIDTH * col + CAL_LEFT + CAL_GAP, CAL_HEIGHT * week, CAL_WIDTH - CAL_GAP, CAL_HEIGHT - CAL_GAP), 0, GCornerNone);
 
+        if (!(row == specialRow && col == specialDay)) {
+          int wd = col + settings_get()->dayOfWeekOffset;
+          if (wd > 6) { wd -= 7; }
+          graphics_context_set_text_color(ctx, (wd == 0 || wd == 6) ? pal.weekend : pal.fg);
+        }
         // draw the cell text
         char date_text[3];
         snprintf(date_text, sizeof(date_text), "%d", calendar[col + 7 * (row - 1)]);
