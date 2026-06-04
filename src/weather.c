@@ -13,12 +13,14 @@ static weather_data s_weather = {
 
 weather_data *weather_state(void) { return &s_weather; }
 
-void weather_layer_update_callback(Layer *me, GContext* ctx) {
+static Layer *s_weather_layer;
+
+static void weather_render(Layer *me, GContext *ctx) {
   (void)me;
   static char temp_current[] = "N/A  ";
   static char cond_current[] = "0";
   if (weather_state()->current < 900) {
-    snprintf(temp_current, sizeof(temp_current), "%d\u00b0", weather_state()->current);
+    snprintf(temp_current, sizeof(temp_current), "%d°", weather_state()->current);
   } else {
     snprintf(temp_current, sizeof(temp_current), "N/A");
   }
@@ -29,3 +31,13 @@ void weather_layer_update_callback(Layer *me, GContext* ctx) {
   graphics_draw_text(ctx, temp_current, fonts_get_system_font(FONT_KEY_GOTHIC_24), GRect(2,42,36,36), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
   if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Weather redrawing: %d, %s", weather_state()->current, weather_state()->condition); }
 }
+
+void weather_create(Layer *parent, GRect frame) {
+  s_weather_layer = layer_create(frame);
+  layer_set_update_proc(s_weather_layer, weather_render);
+  layer_add_child(parent, s_weather_layer);
+}
+void weather_destroy(void)            { layer_destroy(s_weather_layer); }
+void weather_set_frame(GRect frame)   { layer_set_frame(s_weather_layer, frame); }
+void weather_set_hidden(bool hidden)  { layer_set_hidden(s_weather_layer, hidden); }
+void weather_mark_dirty(void)         { layer_mark_dirty(s_weather_layer); }

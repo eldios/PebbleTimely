@@ -33,7 +33,6 @@ static TextLayer *ampm_layer;
 static TextLayer *day_layer;
 static Layer *calendar_layer;
 static Layer *splash_layer;
-static Layer *weather_layer;
 static Layer *statusbar;
 static Layer *slot_status;
 static Layer *slot_top;
@@ -748,7 +747,7 @@ void position_time_layer() {
     weather_offset = -10;
   }
   layer_set_frame( text_layer_get_layer(time_layer), GRect(REL_CLOCK_TIME_LEFT, REL_CLOCK_TIME_TOP + time_offset, DEVICE_WIDTH, REL_CLOCK_TIME_HEIGHT) );
-  layer_set_frame( weather_layer, GRect(REL_CLOCK_TIME_LEFT, weather_offset, DEVICE_WIDTH, LAYOUT_SLOT_HEIGHT) );
+  weather_set_frame( GRect(REL_CLOCK_TIME_LEFT, weather_offset, DEVICE_WIDTH, LAYOUT_SLOT_HEIGHT) );
 }
 
 void update_datetime_subtext() {
@@ -783,9 +782,9 @@ void toggle_weather() {
   if (adv_settings_get()->weather_update) {
     //if (!showing_statusbar) { text_layer_set_text_alignment(date_layer, GTextAlignmentRight); }
     text_layer_set_text_alignment(time_layer, GTextAlignmentRight);
-    layer_set_hidden(weather_layer, false);
+    weather_set_hidden(false);
   } else {
-    layer_set_hidden(weather_layer, true);
+    weather_set_hidden(true);
     text_layer_set_text_alignment(time_layer, GTextAlignmentCenter);
     //text_layer_set_text_alignment(date_layer, GTextAlignmentCenter);
   }
@@ -866,7 +865,7 @@ void battery_layer_update_callback(Layer *me, GContext* ctx) {
 static void request_weather(void *data) {
   if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Requesting Weather [%d/%d]", weather_state()->failures, weather_state()->requests); }
   strncpy(weather_state()->condition, "h", sizeof(weather_state()->condition)-1); // h = updating 'cloud' icon
-  layer_mark_dirty(weather_layer); // update UI element to indicate we're fetching weather...
+  weather_mark_dirty(); // update UI element to indicate we're fetching weather...
   DictionaryIterator *iter;
   AppMessageResult result = app_message_outbox_begin(&iter);
   if (iter == NULL) {
@@ -1239,9 +1238,7 @@ static void window_load(Window *window) {
   update_date_text();
   layer_add_child(datetime_layer, text_layer_get_layer(date_layer));
 
-  weather_layer = layer_create(slot_top_bounds);
-  layer_set_update_proc(weather_layer, weather_layer_update_callback);
-  layer_add_child(datetime_layer, weather_layer);
+  weather_create(datetime_layer, slot_top_bounds);
 
   time_layer = text_layer_create( GRect(REL_CLOCK_TIME_LEFT, REL_CLOCK_TIME_TOP, DEVICE_WIDTH - 2, REL_CLOCK_TIME_HEIGHT) ); // see position_time_layer()
   set_layer_attr_cfont(time_layer, RESOURCE_ID_FONT_FUTURA_CONDENSED_48, GTextAlignmentCenter);
@@ -1320,7 +1317,7 @@ static void window_unload(Window *window) {
   layer_destroy(text_layer_get_layer(week_layer));
   layer_destroy(text_layer_get_layer(time_layer));
   layer_destroy(text_layer_get_layer(date_layer));
-  layer_destroy(weather_layer);
+  weather_destroy();
   layer_destroy(splash_layer);
   layer_destroy(calendar_layer);
   layer_destroy(datetime_layer);
@@ -1450,7 +1447,7 @@ void in_weather_handler(DictionaryIterator *received, void *context) {
     if (appkey != NULL)     { weather_state()->current = appkey->value->int16; }
     appkey = dict_find(received, AK_WEATHER_COND);
     if (appkey != NULL)     { strncpy(weather_state()->condition, appkey->value->cstring, sizeof(weather_state()->condition)-1); }
-    layer_mark_dirty(weather_layer);
+    weather_mark_dirty();
     if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Weather received [%d/%d]: %d, %s", weather_state()->failures, weather_state()->requests, weather_state()->current, weather_state()->condition); }
     if (weather_state()->current == 999) {
       weather_state()->failures++;

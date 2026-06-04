@@ -11,4 +11,9 @@ typedef struct weather_data {
 
 weather_data *weather_state(void);
 
-void weather_layer_update_callback(Layer *me, GContext* ctx);
+// Weather display component — owns its layer.
+void weather_create(Layer *parent, GRect frame);
+void weather_destroy(void);
+void weather_set_frame(GRect frame);
+void weather_set_hidden(bool hidden);
+void weather_mark_dirty(void);
