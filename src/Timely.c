@@ -1003,6 +1003,17 @@ static void handle_bluetooth(bool connected) {
   }
 }
 
+static void apply_palette(void) {
+  GColor fg = theme_palette().fg;
+  text_layer_set_text_color(time_layer, fg);
+  text_layer_set_text_color(date_layer, fg);
+  text_layer_set_text_color(day_layer, fg);
+  text_layer_set_text_color(week_layer, fg);
+  text_layer_set_text_color(ampm_layer, fg);
+  text_layer_set_text_color(text_connection_layer, fg);
+  text_layer_set_text_color(text_battery_layer, fg);
+}
+
 static void set_unifont() {
   if ( strcmp(lang_gen_get()->language,"RU") == 0 ) { // Unicode font w/ Cyrillic characters
     // set fonts...
@@ -1053,7 +1064,7 @@ bool hourvibe_period_check() {
 
 void set_layer_attr(TextLayer *textlayer, GTextAlignment Alignment) {
   text_layer_set_text_alignment(textlayer, Alignment);
-  text_layer_set_text_color(textlayer, GColorWhite);
+  text_layer_set_text_color(textlayer, theme_palette().fg);
   text_layer_set_background_color(textlayer, GColorClear);
 }
 
@@ -1181,6 +1192,7 @@ static void window_load(Window *window) {
   layer_add_child(statusbar, text_layer_get_layer(text_battery_layer));
 
   set_unifont();
+  apply_palette();
 
   // NOTE: No more adding layers below here - the inverter layers NEED to be the last to be on top!
 
@@ -1257,6 +1269,7 @@ void handle_vibe_suppression() {
 void handle_minute_tick(struct tm *tick_time, TimeUnits units_changed)
 {
   *currentTime = *tick_time;
+  apply_palette();
   update_time_text();
   if ( currentTime->tm_min % 10 == 0) {
     dnd_period_check();
