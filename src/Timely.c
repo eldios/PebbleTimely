@@ -34,6 +34,7 @@ static TextLayer *time_layer;
 static TextLayer *week_layer;
 static TextLayer *ampm_layer;
 static TextLayer *day_layer;
+static TextLayer *ctr_r_layer; // center row (above time), right slot; date_layer is the left
 static Layer *statusbar;
 static Layer *slot_status;
 static Layer *slot_top;
@@ -150,6 +151,8 @@ static bool showing_statusbar = true;
 #define AK_CLOCK2_TZ            113
 #define AK_SLOT_STAT_L         114
 #define AK_SLOT_STAT_R         115
+#define AK_SLOT_CTR_L          116
+#define AK_SLOT_CTR_R          117
 
 #define AK_TRANS_ABBR_SUNDAY    500
 #define AK_TRANS_ABBR_MONDAY    501
@@ -213,6 +216,9 @@ static int STAT_BATT_LEFT = 96; // right-aligned at runtime
 #define STAT_BT_ICON_TOP      2
 static int STAT_CHRG_ICON_LEFT = 76; // right-aligned at runtime
 #define STAT_CHRG_ICON_TOP    2
+
+void apply_center(void); // center row (above time): 1 slot full / 2 slots halves
+void apply_bottom(void); // bottom row (above calendar): 1 slot full / 2 slots halves
 
 // relative coordinates (relative to SLOTs)
 static int REL_CLOCK_DATE_LEFT = 2;
@@ -442,7 +448,7 @@ char *format_current_date(void) {
 }
 
 void update_date_text() {
-    text_layer_set_text(date_layer, format_current_date());
+    apply_center(); // the date lives in the center row now (default left slot)
 }
 
 void update_time_text() {
@@ -664,6 +670,40 @@ void process_show_week() { update_slot_text(week_layer, settings_get()->show_wee
 void process_show_day()  { update_slot_text(day_layer,  settings_get()->show_day); }    // MIDDLE
 void process_show_ampm() { update_slot_text(ampm_layer, settings_get()->show_am_pm); }  // RIGHT
 
+// Lay out a two-slot complication row at (top,h): both set -> halves; one set ->
+// full-width centered in the left layer; none -> both hidden.
+static void layout_two_slots(TextLayer *l, TextLayer *r, uint8_t cl, uint8_t cr, int top, int h) {
+  int half = DEVICE_WIDTH / 2;
+  Layer *ll = text_layer_get_layer(l), *rl = text_layer_get_layer(r);
+  if (cl && cr) {
+    layer_set_frame(ll, GRect(2, top, half - 4, h));        text_layer_set_text_alignment(l, GTextAlignmentLeft);
+    layer_set_frame(rl, GRect(half + 2, top, half - 4, h)); text_layer_set_text_alignment(r, GTextAlignmentRight);
+    layer_set_hidden(ll, false); layer_set_hidden(rl, false);
+    update_slot_text(l, cl); update_slot_text(r, cr);
+  } else if (cl || cr) {
+    layer_set_frame(ll, GRect(2, top, DEVICE_WIDTH - 4, h)); text_layer_set_text_alignment(l, GTextAlignmentCenter);
+    layer_set_hidden(ll, false); layer_set_hidden(rl, true);
+    update_slot_text(l, cl ? cl : cr);
+  } else {
+    layer_set_hidden(ll, true); layer_set_hidden(rl, true);
+  }
+}
+
+void apply_center(void) {
+  if (!date_layer || !ctr_r_layer) { return; } // not built yet
+  int voff = (strcmp(lang_gen_get()->language, "RU") == 0)
+             ? (showing_statusbar ? -4 : 0) : (showing_statusbar ? -9 : -5);
+  layout_two_slots(date_layer, ctr_r_layer, settings_get()->slot_ctr_l, settings_get()->slot_ctr_r,
+                   REL_CLOCK_DATE_TOP + voff, REL_CLOCK_DATE_HEIGHT);
+}
+
+void apply_bottom(void) {
+  if (!week_layer || !ampm_layer) { return; }
+  int voff = (strcmp(lang_gen_get()->language, "RU") == 0) ? -2 : 0;
+  layout_two_slots(week_layer, ampm_layer, settings_get()->show_week, settings_get()->show_am_pm,
+                   REL_CLOCK_SUBTEXT_TOP + voff, 22);
+}
+
 // The two status-bar slots also draw from the unified menu; battery/connection
 // content additionally shows a 16px icon (the only contents with a glyph).
 static GBitmap *stat_slot_icon(uint8_t content) {
@@ -718,52 +758,25 @@ void position_connection_layer() {
 }
 
 void position_date_layer() {
-  static int date_vert_offset = 0;
-  // potentially adjust the date position, depending on language/font
-  if ( strcmp(lang_gen_get()->language,"RU") == 0 ) { // Unicode font w/ Cyrillic characters
-    if (showing_statusbar) {
-      date_vert_offset = -4;
-    } else {
-      date_vert_offset = 0;
-    }
-  } else { // Standard font (EN, etc.)
-    if (showing_statusbar) {
-      date_vert_offset = -9;
-    } else {
-      date_vert_offset = -5;
-    }
-  }
-  layer_set_frame( text_layer_get_layer(date_layer), GRect(REL_CLOCK_DATE_LEFT, REL_CLOCK_DATE_TOP + date_vert_offset, REL_CLOCK_DATE_WIDTH, REL_CLOCK_DATE_HEIGHT) );
+  apply_center(); // center row owns the date band now
 }
 
 void position_day_layer() {
-  // Two complications above the calendar, each its own half-width (left-aligned
-  // and right-aligned). Re-applied here so the RU font's vertical nudge sticks.
-  int voff = (strcmp(lang_gen_get()->language, "RU") == 0) ? -2 : 0;
-  int half = DEVICE_WIDTH / 2;
-  layer_set_frame( text_layer_get_layer(week_layer), GRect(2, REL_CLOCK_SUBTEXT_TOP + voff, half - 4, 22) );
-  layer_set_frame( text_layer_get_layer(ampm_layer), GRect(half + 2, REL_CLOCK_SUBTEXT_TOP + voff, half - 4, 22) );
+  apply_bottom(); // bottom row owns the above-calendar band now
 }
 
 void position_time_layer() {
-  // potentially adjust the clock position, if we've added/removed the week, day, or AM/PM layers
-  static int time_offset = 0;
-  static int weather_offset = 0;
-  if (!settings_get()->show_week && !settings_get()->show_am_pm) {
-    time_offset = 12;
-    weather_offset = 0;
-  } else {
-    time_offset = 2;
-    weather_offset = -10;
-  }
+  // Nudge the clock/weather up a little when the bottom (above-calendar) row is
+  // in use, so the complications get their strip flush above the calendar.
+  bool bottom_used = settings_get()->show_week || settings_get()->show_am_pm;
+  int time_offset    = bottom_used ? 2 : 12;
+  int weather_offset = bottom_used ? -10 : 0;
   layer_set_frame( text_layer_get_layer(time_layer), GRect(REL_CLOCK_TIME_LEFT, REL_CLOCK_TIME_TOP + time_offset, DEVICE_WIDTH, REL_CLOCK_TIME_HEIGHT) );
   weather_set_frame( GRect(REL_CLOCK_TIME_LEFT, weather_offset, DEVICE_WIDTH, LAYOUT_SLOT_HEIGHT) );
 }
 
 void update_datetime_subtext() {
-    process_show_week();
-    process_show_day();
-    process_show_ampm();
+    apply_bottom();
     position_time_layer();
 }
 
@@ -804,13 +817,8 @@ void toggle_statusbar() {
   if (showing_statusbar) {
     // status
     layer_set_hidden(statusbar, false);
-    // date
+    // date / center-left (alignment owned by apply_center)
     layer_add_child(datetime_layer, text_layer_get_layer(date_layer));
-    if (adv_settings_get()->weather_update && (settings_get()->show_week || settings_get()->show_am_pm)) {
-      text_layer_set_text_alignment(date_layer, GTextAlignmentRight);
-    } else {
-      text_layer_set_text_alignment(date_layer, GTextAlignmentCenter);
-    }
     // icon(s)
     layer_add_child(statusbar, bitmap_layer_get_layer(bmp_charging_layer));
     //layer_set_frame( bitmap_layer_get_layer(bmp_charging_layer), GRect(STAT_CHRG_ICON_LEFT, STAT_CHRG_ICON_TOP, 20, 20) );
@@ -819,9 +827,8 @@ void toggle_statusbar() {
   } else {
     // status
     layer_set_hidden(statusbar, true);
-    // date
+    // date / center-left moves into the reclaimed status-bar strip
     layer_add_child(slot_status, text_layer_get_layer(date_layer));
-    text_layer_set_text_alignment(date_layer, GTextAlignmentCenter);
     // icon(s)
     layer_add_child(datetime_layer, bitmap_layer_get_layer(bmp_charging_layer));
     //layer_set_frame( bitmap_layer_get_layer(bmp_charging_layer), GRect(124, -2, 20, 20) );
@@ -1116,6 +1123,7 @@ static void apply_palette(void) {
   GColor fg = theme_palette().fg;
   text_layer_set_text_color(time_layer, fg);
   text_layer_set_text_color(date_layer, fg);
+  if (ctr_r_layer) { text_layer_set_text_color(ctr_r_layer, fg); }
   text_layer_set_text_color(day_layer, fg);
   text_layer_set_text_color(week_layer, fg);
   text_layer_set_text_color(ampm_layer, fg);
@@ -1303,11 +1311,14 @@ static void window_load(Window *window) {
   toggle_slot_bottom((void*)(intptr_t)0);  // show @ start...
   bottom_toggle = app_timer_register(2000, &toggle_slot_bottom, (void*)(intptr_t)1); // queue calendar to reappear in 2 seconds
 
-  date_layer = text_layer_create( GRect(REL_CLOCK_DATE_LEFT, REL_CLOCK_DATE_TOP, REL_CLOCK_DATE_WIDTH, REL_CLOCK_DATE_HEIGHT) ); // see position_date_layer()
+  // Center row (above time): date_layer is the left slot, ctr_r_layer the right.
+  date_layer = text_layer_create( GRect(REL_CLOCK_DATE_LEFT, REL_CLOCK_DATE_TOP, REL_CLOCK_DATE_WIDTH, REL_CLOCK_DATE_HEIGHT) );
   set_layer_attr_sfont(date_layer, FONT_KEY_GOTHIC_24, GTextAlignmentCenter);
-  position_date_layer(); // depends on font/language
-  update_date_text();
   layer_add_child(datetime_layer, text_layer_get_layer(date_layer));
+  ctr_r_layer = text_layer_create( GRect(DEVICE_WIDTH/2 + 2, REL_CLOCK_DATE_TOP, DEVICE_WIDTH/2 - 4, REL_CLOCK_DATE_HEIGHT) );
+  set_layer_attr_sfont(ctr_r_layer, FONT_KEY_GOTHIC_24, GTextAlignmentRight);
+  layer_add_child(datetime_layer, text_layer_get_layer(ctr_r_layer));
+  apply_center(); // position + fill both center slots
 
   weather_create(datetime_layer, slot_top_bounds);
 
@@ -1392,6 +1403,7 @@ static void window_unload(Window *window) {
   layer_destroy(text_layer_get_layer(week_layer));
   layer_destroy(text_layer_get_layer(time_layer));
   layer_destroy(text_layer_get_layer(date_layer));
+  layer_destroy(text_layer_get_layer(ctr_r_layer));
   weather_destroy();
   splash_destroy();
   calendar_destroy();
@@ -1685,6 +1697,13 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     Tuple *slot_stat_r = dict_find(received, AK_SLOT_STAT_R);
     if (slot_stat_r != NULL) { settings_get()->slot_stat_r = slot_stat_r->value->uint8; }
     if (slot_stat_l != NULL || slot_stat_r != NULL) { refresh_stat_slots(); }
+
+    // Center-row slots (above the time).
+    Tuple *slot_ctr_l = dict_find(received, AK_SLOT_CTR_L);
+    if (slot_ctr_l != NULL) { settings_get()->slot_ctr_l = slot_ctr_l->value->uint8; }
+    Tuple *slot_ctr_r = dict_find(received, AK_SLOT_CTR_R);
+    if (slot_ctr_r != NULL) { settings_get()->slot_ctr_r = slot_ctr_r->value->uint8; }
+    if (slot_ctr_l != NULL || slot_ctr_r != NULL) { apply_center(); }
 
     if (need_second_tick_handler() != seconds_shown) {
       switch_tick_handler();

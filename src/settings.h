@@ -16,6 +16,8 @@ typedef struct persist { // 18 bytes
   uint8_t show_week;              // Above-calendar slot, left (complication content)
   uint8_t slot_stat_l;            // Status bar slot, left (complication content)
   uint8_t slot_stat_r;            // Status bar slot, right (complication content)
+  uint8_t slot_ctr_l;             // Center row (above time), left
+  uint8_t slot_ctr_r;             // Center row (above time), right
   uint8_t week_format;            // week format (calculation, e.g. ISO 8601)
   uint8_t vibe_pat_disconnect;    // vibration pattern for disconnect
   uint8_t vibe_pat_connect;       // vibration pattern for connect
