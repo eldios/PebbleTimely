@@ -1137,7 +1137,7 @@ static void window_load(Window *window) {
   weather_create(datetime_layer, slot_top_bounds);
 
   time_layer = text_layer_create( GRect(REL_CLOCK_TIME_LEFT, REL_CLOCK_TIME_TOP, DEVICE_WIDTH - 2, REL_CLOCK_TIME_HEIGHT) ); // see position_time_layer()
-  set_layer_attr_cfont(time_layer, RESOURCE_ID_FONT_FUTURA_CONDENSED_48, GTextAlignmentCenter);
+  set_layer_attr_sfont(time_layer, FONT_KEY_ROBOTO_BOLD_SUBSET_49, GTextAlignmentCenter); // crisp system clock font
   toggle_weather();
   position_time_layer(); // make use of our whitespace, if we have it...
   update_time_text();
