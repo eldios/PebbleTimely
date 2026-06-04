@@ -91,6 +91,7 @@ char *translate_error(AppMessageResult result);
 struct tm *get_time();
 void setColors(GContext* ctx);
 void setInvColors(GContext* ctx);
+void setTodayColors(GContext* ctx);
 void weather_layer_update_callback(Layer *me, GContext* ctx);
 void splash_layer_update_callback(Layer *me, GContext* ctx);
 void calendar_layer_update_callback(Layer *me, GContext* ctx);

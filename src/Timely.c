@@ -346,6 +346,16 @@ void setInvColors(GContext* ctx) {
     graphics_context_set_text_color(ctx, GColorBlack);
 }
 
+// Highlight colors for the current day's calendar cell. On color platforms the
+// cell gets an accent fill (tune GColorJaegerGreen to taste); on B&W it falls
+// back to the classic white-on-black inversion (identical to setInvColors).
+void setTodayColors(GContext* ctx) {
+    window_set_background_color(window, PBL_IF_COLOR_ELSE(GColorBlack, GColorWhite));
+    graphics_context_set_stroke_color(ctx, PBL_IF_COLOR_ELSE(GColorWhite, GColorBlack));
+    graphics_context_set_fill_color(ctx, PBL_IF_COLOR_ELSE(GColorJaegerGreen, GColorWhite));
+    graphics_context_set_text_color(ctx, PBL_IF_COLOR_ELSE(GColorWhite, GColorBlack));
+}
+
 void weather_layer_update_callback(Layer *me, GContext* ctx) {
   (void)me; // 144x72
   static char temp_current[] = "N/A  ";
@@ -531,7 +541,7 @@ void calendar_layer_update_callback(Layer *me, GContext* ctx) {
       for (int col = 0; col < CAL_DAYS; col++) {
         if ( row == specialRow && col == specialDay) {
           if (settings.day_invert) {
-            setInvColors(ctx);
+            setTodayColors(ctx);
           }
           current = bold;
           font_vert_offset = -3;
