@@ -61,7 +61,10 @@ function buildConfigPage(spec, current) {
     body += '</section>';
   }
   var script =
-    'function qp(n,d){var m=location.search.match(new RegExp("[?&]"+n+"=([^&]*)"));' +
+    // Read return_to from the full href: data:/file: URIs do not populate
+    // location.search, but the emulator appends ?return_to= and the encoded page
+    // body has no literal ? or &, so the match here is unambiguous.
+    'function qp(n,d){var m=(location.href||"").match(new RegExp("[?&]"+n+"=([^&#]*)"));' +
     'return m?decodeURIComponent(m[1]):d;}' +
     'var RET=qp("return_to","pebblejs://close#");' +
     'document.getElementById("cancel").onclick=function(){document.location=RET;};' +

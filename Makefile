@@ -12,11 +12,11 @@ TEST_SRC := $(wildcard tests/*.c) src/timefmt.c src/layout.c src/calendar.c src/
 EMU  ?= emery
 SHOT ?= $(BUILD)/screenshot-$(EMU).png
 
-.PHONY: help test test-xml test-clean build install run shot config logs kill app-clean sdk
+.PHONY: help test test-xml test-clean build install run shot config preview logs kill app-clean sdk
 
 help:
 	@echo "Host tests (nix develop .#test):  test  test-xml  test-clean"
-	@echo "Pebble (nix develop):             build  run  config  shot  logs  kill  app-clean  sdk"
+	@echo "Pebble (nix develop):             build  run  config  preview  shot  logs  kill  app-clean  sdk"
 	@echo "Guided picker (just):             just menu   (or: just config)"
 	@echo "Vars: EMU=$(EMU)  SHOT=$(SHOT)"
 
@@ -43,8 +43,11 @@ run install: build          ## build + (re)install on the emulator
 
 config: build               ## build + install + open the offline config page (EMU=$(EMU); use `just menu` for a picker)
 	pebble install --emulator $(EMU)
+	pebble emu-app-config --emulator $(EMU)
+
+preview:                    ## render the config page to build/config.html to open in a browser
 	node tools/gen-config-html.js $(BUILD)/config.html
-	pebble emu-app-config --emulator $(EMU) --file $(BUILD)/config.html
+	@echo "open $(BUILD)/config.html"
 
 shot: build                 ## build + install + grab a screenshot to $(SHOT)
 	pebble install --emulator $(EMU)
