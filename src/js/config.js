@@ -1,11 +1,44 @@
 // Declarative spec for the offline settings page (see configpage.js).
-// Each field's `key` matches a messageKey in package.json; the watch reads the
-// value as a uint8, so option values and defaults are plain integers.
+// Each field's `key` matches a messageKey in package.json. Numeric keys are read
+// by the watch as uint8; text keys (language + translations) as strings.
 
 var VIBES = [
   ['None', 0], ['1x', 1], ['2x', 2], ['3x', 3],
   ['Long', 4], ['Min', 5], ['Min 2', 6], ['Ow', 7]
 ];
+
+// Build a list of text fields: keys[i] -> label[i] with default defs[i].
+function textFields(keys, labels, defs, max) {
+  var out = [];
+  for (var i = 0; i < keys.length; i++) {
+    out.push({ key: keys[i], label: labels[i], type: 'text', def: defs[i], max: max });
+  }
+  return out;
+}
+
+var DOW = ['sunday', 'monday', 'tuesday', 'wedsday', 'thursday', 'friday', 'saturday'];
+var DOW_LABEL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+var DOW_ABBR = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+var MON = ['january', 'february', 'march', 'april', 'may', 'june',
+           'july', 'august', 'september', 'october', 'november', 'december'];
+var MON_LABEL = ['January', 'February', 'March', 'April', 'May', 'June',
+                 'July', 'August', 'September', 'October', 'November', 'December'];
+var MON_ABBR = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+var translations = [
+  { key: 'language', label: 'Language code', type: 'text', def: 'EN', max: 2,
+    note: 'Stored on the watch; the strings below are what actually localize it.' },
+  { key: 'trans_connected', label: 'Connected', type: 'text', def: 'Linked', max: 9 },
+  { key: 'trans_disconnected', label: 'Disconnected', type: 'text', def: 'NOLINK', max: 9 },
+  { key: 'trans_time_am', label: 'AM', type: 'text', def: 'AM', max: 6 },
+  { key: 'trans_time_pm', label: 'PM', type: 'text', def: 'PM', max: 6 }
+]
+  .concat(textFields(DOW.map(function (d) { return 'trans_abbr_' + d; }),
+    DOW_LABEL.map(function (l) { return l + ' (abbr)'; }), DOW_ABBR, 2))
+  .concat(textFields(DOW.map(function (d) { return 'trans_' + d; }), DOW_LABEL, DOW_LABEL, 12))
+  .concat(textFields(MON.map(function (m) { return 'trans_abbr_' + m; }),
+    MON_LABEL.map(function (l) { return l + ' (abbr)'; }), MON_ABBR, 3))
+  .concat(textFields(MON.map(function (m) { return 'trans_' + m; }), MON_LABEL, MON_LABEL, 11));
 
 module.exports = [
   {
@@ -17,10 +50,7 @@ module.exports = [
         note: 'Auto follows local sunset/sunrise.',
         options: [['Light', 0], ['Dark', 1], ['Auto', 2]] },
       { key: 'style_day_inv', label: 'Highlight today', type: 'toggle', def: 1 },
-      { key: 'style_grid', label: 'Calendar grid background', type: 'toggle', def: 1 },
-      { key: 'intl_dowo', label: 'Start of week', type: 'select', def: 0,
-        options: [['Sunday', 0], ['Monday', 1], ['Tuesday', 2], ['Wednesday', 3],
-                  ['Thursday', 4], ['Friday', 5], ['Saturday', 6]] }
+      { key: 'style_grid', label: 'Calendar grid background', type: 'toggle', def: 1 }
     ]
   },
   {
@@ -39,11 +69,67 @@ module.exports = [
     ]
   },
   {
+    title: 'Calendar',
+    fields: [
+      { key: 'intl_dowo', label: 'Start of week', type: 'select', def: 0,
+        options: [['Sunday', 0], ['Monday', 1], ['Tuesday', 2], ['Wednesday', 3],
+                  ['Thursday', 4], ['Friday', 5], ['Saturday', 6]] },
+      { key: 'cal_week_pattern', label: 'Weeks shown', type: 'select', def: 0,
+        options: [['Previous + next', 0], ['Last two weeks', 1], ['Next two weeks', 2]] }
+    ]
+  },
+  {
+    title: 'Weather',
+    open: false,
+    fields: [
+      { key: 'weather_fmt', label: 'Units', type: 'select', def: 0,
+        options: [['Celsius', 0], ['Fahrenheit', 1]] },
+      { key: 'weather_update', label: 'Update every', type: 'select', def: 15,
+        options: [['Off', 0], ['15 min', 15], ['30 min', 30], ['60 min', 60]] }
+    ]
+  },
+  {
+    title: 'Status bar',
+    open: false,
+    fields: [
+      { key: 'show_stat_bar', label: 'Show status bar', type: 'select', def: 1,
+        options: [['Never', 0], ['Always', 1], ['When battery low', 2]] },
+      { key: 'show_stat_batt', label: 'Low battery threshold (%)', type: 'number', def: 20,
+        min: 0, max: 100, note: 'Used when "When battery low" is selected.' }
+    ]
+  },
+  {
     title: 'Vibration',
+    open: false,
     fields: [
       { key: 'vibe_hour', label: 'Hourly', type: 'select', def: 0, options: VIBES },
       { key: 'vibe_pat_disconnect', label: 'On disconnect', type: 'select', def: 2, options: VIBES },
-      { key: 'vibe_pat_connect', label: 'On reconnect', type: 'select', def: 0, options: VIBES }
+      { key: 'vibe_pat_connect', label: 'On reconnect', type: 'select', def: 0, options: VIBES },
+      { key: 'vibe_start', label: 'Hourly active from', type: 'time', def: 0 },
+      { key: 'vibe_stop', label: 'Hourly active until', type: 'time', def: 0,
+        note: 'Equal start/end = active all day.' }
+    ]
+  },
+  {
+    title: 'Do Not Disturb',
+    open: false,
+    fields: [
+      { key: 'dnd_start', label: 'From', type: 'time', def: 0 },
+      { key: 'dnd_stop', label: 'Until', type: 'time', def: 0,
+        note: 'Equal start/end = disabled. Silences connection vibrations.' }
+    ]
+  },
+  {
+    title: 'Language & translations',
+    open: false,
+    fields: translations
+  },
+  {
+    title: 'Advanced',
+    open: false,
+    fields: [
+      { key: 'debugging_on', label: 'Debug logging', type: 'toggle', def: 0 },
+      { key: 'debuglang_on', label: 'Translation debug logging', type: 'toggle', def: 0 }
     ]
   }
 ];
