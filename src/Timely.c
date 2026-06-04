@@ -413,7 +413,7 @@ void update_date_text() {
       if ((settings_get()->date_format>=195)||(settings_get()->date_format<=254)) { // load from table
         strftime(date_text, sizeof(date_text), datestr[settings_get()->date_format-195], currentTime);
       } else if (settings_get()->date_format==255) {
-        strftime(date_text, sizeof(date_text), settings_get()->strftime_format, currentTime);  
+        strftime(date_text, sizeof(date_text), adv_settings_get()->custom_date_fmt, currentTime);
       }
 
       snprintf(date_string, sizeof(date_string), "%s", date_text); // straight copy
@@ -522,95 +522,27 @@ void update_timezone_text(TextLayer *which_layer) {
   text_layer_set_text(which_layer, timezone_text);
 }
 
-void process_show_week() {
-  // LEFT
-  switch ( settings_get()->show_week ) {
-  case 0: // Hide
-    //layer_set_hidden(text_layer_get_layer(week_layer), true);
-    return;
-  case 1: // Show Week
-    update_week_text(week_layer);
-    break;
-  case 2: // Show Timezone
-    update_timezone_text(week_layer);
-    break;
-  case 3: // Show AM/PM
-    update_ampm_text(week_layer);
-    break;
-  case 4: // Show Day of Year
-    update_doy_text(week_layer);
-    break;
-  case 5: // Show Days Left in Year
-    update_dliy_text(week_layer);
-    break;
-  case 6: // Show Seconds
-    update_seconds_text(week_layer);
-    break;
-  case 7: // Show Location
-    update_location_text(week_layer);
-    break;
+// All three below-time slots ("complications") share the same content menu.
+// Keep these values in sync with src/js/config.js.
+void update_slot_text(TextLayer *layer, uint8_t content) {
+  switch (content) {
+  case 1:  update_day_text(layer);       break; // Day name
+  case 2:  update_month_text(layer);     break; // Month name
+  case 3:  update_week_text(layer);      break; // Week number
+  case 4:  update_timezone_text(layer);  break; // Timezone
+  case 5:  update_ampm_text(layer);      break; // AM/PM
+  case 6:  update_doy_text(layer);       break; // Day of year
+  case 7:  update_dliy_text(layer);      break; // Days left in year
+  case 8:  update_doy_dliy_text(layer);  break; // Day of year / left (alternating)
+  case 9:  update_seconds_text(layer);   break; // Seconds
+  case 10: update_location_text(layer);  break; // Weather location
+  default: break;                                // 0 = hidden
   }
 }
 
-void process_show_day() {
-  // MIDDLE
-  switch ( settings_get()->show_day ) {
-  case 0: // Hide
-    //layer_set_hidden(text_layer_get_layer(day_layer), true);
-    return;
-  case 1: // Show Day
-    update_day_text(day_layer);
-    break;
-  case 2: // Show Month
-    update_month_text(day_layer);
-    break;
-  case 3: // Show Timezone
-    update_timezone_text(day_layer);
-    break;
-  case 4: // Show Week
-    update_week_text(day_layer);
-    break;
-  case 5: // Show AM/PM
-    update_ampm_text(day_layer);
-    break;
-  case 6: // Show DoY/DLiY
-    update_doy_dliy_text(day_layer);
-    break;
-  case 7: // Show Location
-    update_location_text(day_layer);
-    break;
-  }
-}
-
-void process_show_ampm() {
-  // RIGHT
-  switch ( settings_get()->show_am_pm ) {
-  case 0: // Hide
-    //layer_set_hidden(text_layer_get_layer(ampm_layer), true);
-    return;
-  case 1: // Show AM/PM
-    update_ampm_text(ampm_layer);
-    break;
-  case 2: // Show Timezone
-    update_timezone_text(ampm_layer);
-    break;
-  case 3: // Show Week
-    update_week_text(ampm_layer);
-    break;
-  case 4: // Show Day of Year
-    update_doy_text(ampm_layer);
-    break;
-  case 5: // Show Days Left in Year
-    update_dliy_text(ampm_layer);
-    break;
-  case 6: // Show Seconds
-    update_seconds_text(ampm_layer);
-    break;
-  case 7: // Show Location
-    update_location_text(ampm_layer);
-    break;
-  }
-}
+void process_show_week() { update_slot_text(week_layer, settings_get()->show_week); }   // LEFT
+void process_show_day()  { update_slot_text(day_layer,  settings_get()->show_day); }    // MIDDLE
+void process_show_ampm() { update_slot_text(ampm_layer, settings_get()->show_am_pm); }  // RIGHT
 
 void position_connection_layer() {
   static int connection_vert_offset = 0;
@@ -1496,6 +1428,13 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     Tuple *FMT_DATE = dict_find(received, AK_INTL_FMT_DATE);
     if (FMT_DATE != NULL) {
       settings_get()->date_format = FMT_DATE->value->uint8;
+      update_date_text();
+    }
+
+    // AK_STRFTIME_FORMAT == custom strftime string used when date_format == 255
+    Tuple *sfmt = dict_find(received, AK_STRFTIME_FORMAT);
+    if (sfmt != NULL) {
+      strncpy(adv_settings_get()->custom_date_fmt, sfmt->value->cstring, sizeof(adv_settings_get()->custom_date_fmt)-1);
       update_date_text();
     }
 

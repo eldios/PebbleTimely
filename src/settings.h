@@ -39,7 +39,7 @@ typedef struct persist_adv_settings { // 243 bytes
   uint8_t vibe_hour_days;  //  1 byte
   uint8_t idle_reminder;   //  1 byte
   uint8_t idle_pattern;    //  1 byte
-  char idle_message[32];   // 32 bytes
+  char custom_date_fmt[32]; // 32 bytes: custom strftime date format (date_format == 255)
   uint8_t idle_start;      //  1 byte
   uint8_t idle_stop;       //  1 byte
   int8_t clock2_tz;        //  1 byte

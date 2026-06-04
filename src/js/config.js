@@ -7,6 +7,23 @@ var VIBES = [
   ['Long', 4], ['Min', 5], ['Min 2', 6], ['Ow', 7]
 ];
 
+// Complication menu shared by all three below-time slots (left/middle/right).
+// Values must match update_slot_text() in Timely.c.
+var SLOTS = [
+  ['—', 0], ['Day', 1], ['Month', 2], ['Week', 3], ['Timezone', 4], ['AM/PM', 5],
+  ['Day of year', 6], ['Days left in year', 7], ['Day of year / left', 8],
+  ['Seconds', 9], ['Location', 10]
+];
+
+// Date formats; values must match update_date_text() in Timely.c. 255 = custom.
+var DATE_FORMATS = [
+  ['MMMM DD, YYYY', 0], ['MMMM DD, ’YY', 1], ['Mmm DD, YYYY', 2], ['Mmm DD, ’YY', 3],
+  ['D MMMM YYYY', 11], ['D MMMM ’YY', 12], ['D Mmm YYYY', 13], ['D Mmm ’YY', 14],
+  ['MM/DD/YYYY', 197], ['DD/MM/YYYY', 217], ['DD.MM.YYYY', 215], ['YYYY-MM-DD', 236],
+  ['DD-MM-YYYY', 216], ['MM-DD-YYYY', 196], ['YYYY/MM/DD', 237], ['YYYYMMDD', 239],
+  ['Custom (strftime)', 255]
+];
+
 // Build a list of text fields: keys[i] -> label[i] with default defs[i].
 function textFields(keys, labels, defs, max) {
   var out = [];
@@ -56,17 +73,13 @@ module.exports = [
   {
     title: 'Clock',
     fields: [
-      { key: 'intl_fmt_date', label: 'Date format', type: 'select', def: 0,
-        options: [['MMMM DD, YYYY', 0], ['DD.MM.YYYY', 1]] },
-      { key: 'style_week', label: 'Below time, left', type: 'select', def: 0,
-        options: [['—', 0], ['Week', 1], ['Timezone', 2], ['AM/PM', 3],
-                  ['Day of year', 4], ['Days left in year', 5], ['Seconds', 6], ['Location', 7]] },
-      { key: 'style_day', label: 'Below time, middle', type: 'select', def: 0,
-        options: [['—', 0], ['Day', 1], ['Month', 2], ['Timezone', 3], ['Week', 4], ['AM/PM', 5],
-                  ['Day of year / left', 6], ['Location', 7]] },
-      { key: 'style_am_pm', label: 'Below time, right', type: 'select', def: 0,
-        options: [['—', 0], ['AM/PM', 1], ['Timezone', 2], ['Week', 3],
-                  ['Day of year', 4], ['Days left in year', 5], ['Seconds', 6], ['Location', 7]] },
+      { key: 'intl_fmt_date', label: 'Date format', type: 'select', def: 0, options: DATE_FORMATS },
+      { key: 'strftime_format', label: 'Custom format', type: 'text', def: '%Y-%m-%d', max: 31,
+        showWhen: { key: 'intl_fmt_date', val: 255 },
+        note: 'strftime pattern, e.g. %a %d %b. Used when Date format is Custom.' },
+      { key: 'style_week', label: 'Below time, left', type: 'select', def: 0, options: SLOTS },
+      { key: 'style_day', label: 'Below time, middle', type: 'select', def: 0, options: SLOTS },
+      { key: 'style_am_pm', label: 'Below time, right', type: 'select', def: 0, options: SLOTS },
       { key: 'intl_fmt_week', label: 'Week numbering', type: 'select', def: 0,
         options: [['ISO 8601', 0], ['Sun 1st of W1', 1], ['Mon 1st of W1', 2]] }
     ]

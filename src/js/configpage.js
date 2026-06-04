@@ -91,6 +91,10 @@ function renderField(f, current) {
   }
   var row = '<label class="row"><span>' + esc(f.label) + '</span>' + control + '</label>';
   if (f.note) { row += '<p class="note">' + esc(f.note) + '</p>'; }
+  if (f.showWhen) {
+    row = '<div class="cond" data-wkey="' + esc(f.showWhen.key) + '" data-wval="' +
+      esc(f.showWhen.val) + '">' + row + '</div>';
+  }
   return row;
 }
 
@@ -145,6 +149,12 @@ function buildConfigPage(spec, current) {
     'function sync(id){var s=byId(id+"Mode"),w=byId(id+"Window");if(s&&w)w.style.display=(+s.value===2?"":"none");}' +
     'function wire(id){var s=byId(id+"Mode");if(s){s.onchange=function(){sync(id);};sync(id);}}' +
     'wire("vibe");wire("dnd");' +
+    // Conditional fields (.cond): shown only when their source control has the value.
+    'function syncCond(){var cs=document.querySelectorAll(".cond");for(var i=0;i<cs.length;i++){' +
+    'var c=cs[i],src=document.querySelector(\'[data-key="\'+c.getAttribute("data-wkey")+\'"]\');' +
+    'c.style.display=(src&&String(src.value)===String(c.getAttribute("data-wval")))?"":"none";}}' +
+    'var allk=document.querySelectorAll("[data-key]");for(var z=0;z<allk.length;z++){allk[z].addEventListener("change",syncCond);}' +
+    'syncCond();' +
     // Derive the watch keys from the scheduled controls; return false to abort.
     'function augment(o){var v=byId("vibeMode");if(v){var m=+v.value;' +
     'if(m===0){o.vibe_hour=0;o.vibe_start=0;o.vibe_stop=0;}' +
