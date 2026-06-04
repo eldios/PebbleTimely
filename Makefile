@@ -43,7 +43,8 @@ run install: build          ## build + (re)install on the emulator
 
 config: build               ## build + install + open the offline config page (EMU=$(EMU); use `just menu` for a picker)
 	pebble install --emulator $(EMU)
-	pebble emu-app-config --emulator $(EMU)
+	node tools/gen-config-html.js $(BUILD)/config.html
+	pebble emu-app-config --emulator $(EMU) --file $(BUILD)/config.html
 
 preview:                    ## render the config page to build/config.html to open in a browser
 	node tools/gen-config-html.js $(BUILD)/config.html

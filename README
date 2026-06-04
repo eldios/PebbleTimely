@@ -36,10 +36,10 @@ data:text/html URI; the page returns the chosen values via pebblejs://close#.
 Edit src/js/config.js to change the options.
 
 To try it on an emulator: "just config" (guided platform picker via gum) or
-"make config EMU=emery" builds, installs, and opens the same data: URI the real
-watch uses so you can pick a theme and see the watchface update. "just preview"
-renders the page to build/config.html to open in a desktop browser; "just menu"
-is a guided front-end to all the test tasks.
+"make config EMU=emery" builds, installs, and opens the page (served to the
+emulator as a file:// URL so Save can round-trip) to pick a theme and see the
+watchface update. "just preview" renders the page to build/config.html to open
+in a desktop browser; "just menu" is a guided front-end to all the test tasks.
 
 Tests (pure date/timezone logic, host-compiled, no Pebble SDK)
 

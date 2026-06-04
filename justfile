@@ -78,10 +78,13 @@ config:
     echo "▸ $p: build → install → config"
     pebble build
     pebble install --emulator "$p"
+    node tools/gen-config-html.js {{build}}/config.html
     echo "Config page opening for $p — pick a theme/mode and press Save; the watchface updates live."
-    # Opens the same offline data: URI the real watch uses (the emulator appends
-    # ?return_to=, which the page reads from location.href).
-    pebble emu-app-config --emulator "$p"
+    # Emulator path: serve the page as a file:// URL. The browser keeps the
+    # emulator's ?return_to= in location.href there (a data: URI may drop it), so
+    # Save round-trips. On a real watch showConfiguration serves the same page as
+    # a data: URI and the page falls back to pebblejs://close#.
+    pebble emu-app-config --emulator "$p" --file {{build}}/config.html
 
 # render the config page to build/config.html to open in a desktop browser
 preview:
@@ -108,7 +111,7 @@ menu:
     pebble build
     case "$action" in
       "Run on emulator")    pebble install --emulator "$p" ;;
-      "Configure themes")   pebble install --emulator "$p"; pebble emu-app-config --emulator "$p" ;;
+      "Configure themes")   pebble install --emulator "$p"; node tools/gen-config-html.js "{{build}}/config.html"; pebble emu-app-config --emulator "$p" --file "{{build}}/config.html" ;;
       "Screenshot")         pebble install --emulator "$p"; sleep 4; pebble screenshot "{{build}}/screenshot-$p.png" --no-open; echo "saved {{build}}/screenshot-$p.png" ;;
       "Tail logs")          pebble logs --emulator "$p" ;;
     esac
