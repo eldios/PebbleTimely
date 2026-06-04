@@ -241,14 +241,6 @@ static void compute_layout(int w, int h) {
 
 
 
-persist_debug debug = {
-  .general = false,     // debugging disabled by default
-  .language  = false,   // debugging disabled by default
-  .reserved_1 = false,  // debugging disabled by default
-  .reserved_2 = false,  // debugging disabled by default
-  .reserved_3 = false,  // debugging disabled by default
-  .reserved_4 = false,  // debugging disabled by default
-};
 
 
 /*
@@ -317,7 +309,7 @@ void weather_layer_update_callback(Layer *me, GContext* ctx) {
   setColors(ctx);
   graphics_draw_text(ctx, cond_current, climacons, GRect(2,16,34,34), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL); 
   graphics_draw_text(ctx, temp_current, fonts_get_system_font(FONT_KEY_GOTHIC_24), GRect(2,42,36,36), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL); 
-  if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Weather redrawing: %d, %s", weather_state()->current, weather_state()->condition); }
+  if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Weather redrawing: %d, %s", weather_state()->current, weather_state()->condition); }
 }
 
 void splash_layer_update_callback(Layer *me, GContext* ctx) {
@@ -338,7 +330,7 @@ void calendar_layer_update_callback(Layer *me, GContext* ctx) {
                                   adv_settings_get()->week_pattern);
     int *calendar = grid.days;
     int specialDay = grid.special_col;
-    if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Calendar - sCol: %d, sRow: %d", grid.special_col, grid.special_row); }
+    if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Calendar - sCol: %d, sRow: %d", grid.special_col, grid.special_row); }
 
 // ---------------------------
 // Now that we've calculated which days go where, we'll move on to the display logic.
@@ -904,13 +896,13 @@ void battery_layer_update_callback(Layer *me, GContext* ctx) {
 }
 
 static void request_weather(void *data) {
-  if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Requesting Weather [%d/%d]", weather_state()->failures, weather_state()->requests); }
+  if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Requesting Weather [%d/%d]", weather_state()->failures, weather_state()->requests); }
   strncpy(weather_state()->condition, "h", sizeof(weather_state()->condition)-1); // h = updating 'cloud' icon
   layer_mark_dirty(weather_layer); // update UI element to indicate we're fetching weather...
   DictionaryIterator *iter;
   AppMessageResult result = app_message_outbox_begin(&iter);
   if (iter == NULL) {
-    if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "iterator is null: %d", result); }
+    if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "iterator is null: %d", result); }
     return;
   }
   if (dict_write_uint8(iter, AK_MESSAGE_TYPE, AK_REQUEST_WEATHER) != DICT_OK) {
@@ -928,7 +920,7 @@ static void request_timezone(void *data) {
   DictionaryIterator *iter;
   AppMessageResult result = app_message_outbox_begin(&iter);
   if (iter == NULL) {
-    if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "iterator is null: %d", result); }
+    if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "iterator is null: %d", result); }
     return;
   }
   if (dict_write_uint8(iter, AK_MESSAGE_TYPE, AK_TIMEZONE_OFFSET) != DICT_OK) {
@@ -944,12 +936,12 @@ static void watch_version_send(void *data) {
   AppMessageResult result = app_message_outbox_begin(&iter);
 
   if (iter == NULL) {
-    if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "iterator is null: %d", result); }
+    if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "iterator is null: %d", result); }
     return;
   }
 
   if (result != APP_MSG_OK) {
-    if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Dict write failed to open outbox: %d", (AppMessageResult) result); }
+    if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Dict write failed to open outbox: %d", (AppMessageResult) result); }
     return;
   }
 
@@ -975,7 +967,7 @@ static void battery_status_send(void *data) {
   if ( (battery_percent  == sent_battery_percent  )
      & (battery_charging == sent_battery_charging )
      & (battery_plugged  == sent_battery_plugged  ) ) {
-    if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "repeat battery reading"); }
+    if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "repeat battery reading"); }
     battery_sending = NULL;
     return; // no need to resend the same value
   }
@@ -984,12 +976,12 @@ static void battery_status_send(void *data) {
   AppMessageResult result = app_message_outbox_begin(&iter);
 
   if (iter == NULL) {
-    if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "iterator is null: %d", result); }
+    if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "iterator is null: %d", result); }
     return;
   }
 
   if (result != APP_MSG_OK) {
-    if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Dict write failed to open outbox: %d", (AppMessageResult) result); }
+    if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Dict write failed to open outbox: %d", (AppMessageResult) result); }
     return;
   }
 
@@ -1058,11 +1050,11 @@ static void handle_battery(BatteryChargeState charge_state) {
   layer_set_frame(effect_layer_get_layer(battery_meter_layer), GRect(STAT_BATT_LEFT+2, STAT_BATT_TOP+2, battery_meter, STAT_BATT_HEIGHT-4));
   layer_set_hidden(effect_layer_get_layer(battery_meter_layer), false);
 
-  //if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "battery reading"); }
+  //if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "battery reading"); }
   if (battery_sending == NULL) {
     // multiple battery events can fire in rapid succession, we'll let it settle down before logging it
     battery_sending = app_timer_register(5000, &battery_status_send, NULL);
-    if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "battery timer queued"); }
+    if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "battery timer queued"); }
   }
 
   set_status_charging_icon();
@@ -1136,7 +1128,7 @@ static void handle_bluetooth(bool connected) {
     if (bluetooth_connected == true) {
       if ( (timezone_request == NULL) & (timezone_offset == TIMEZONE_UNINITIALIZED) ) {
         timezone_request = app_timer_register(5000, &request_timezone, NULL); // give it time to settle...
-        if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "timezone request timer queued"); }
+        if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "timezone request timer queued"); }
       }
     }
   }
@@ -1173,20 +1165,20 @@ bool period_check(uint8_t start_incr, uint8_t stop_incr, bool retval_on_equal) {
   uint8_t current_min_incr = (currentTime->tm_min - (currentTime->tm_min%10))/10;
   uint8_t current_incr = currentTime->tm_hour * 6 + current_min_incr;
   bool inside_period = period_contains(start_incr, stop_incr, current_incr, retval_on_equal);
-  if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Period Check... %d <= %d <= %d == %d*", start_incr, current_incr, stop_incr, (int)inside_period); }
+  if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Period Check... %d <= %d <= %d == %d*", start_incr, current_incr, stop_incr, (int)inside_period); }
   return inside_period;
 }
 
 bool dnd_period_check() {
   // TODO - adv_settings_get()->DND_accel_off = 0,   // Do Not Disturb: disable accelerometer polling during DND?
   dnd_period_active = period_check(adv_settings_get()->DND_start, adv_settings_get()->DND_stop, false);
-  if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Tested DND period... %d", (int)dnd_period_active); }
+  if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Tested DND period... %d", (int)dnd_period_active); }
   return dnd_period_active;
 }
 bool hourvibe_period_check() {
   // TODO - adv_settings_get()->vibe_hour_days  = 0, // Hour Vibe: days active [Su 1, Mo 2, Tu 4, We 8, Th 16, Fr 32, Sa 64 => 0 => 127]
   vibe_period_active = period_check(adv_settings_get()->vibe_hour_start, adv_settings_get()->vibe_hour_stop, true);
-  if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Tested vibe period... %d", (int)vibe_period_active); }
+  if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Tested vibe period... %d", (int)vibe_period_active); }
   return vibe_period_active;
 }
 
@@ -1464,20 +1456,20 @@ static void switch_tick_handler(void) {
   seconds_shown = need_second_tick_handler();
   if (seconds_shown) {
     tick_timer_service_subscribe(SECOND_UNIT, &handle_second_tick);
-    if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Seconds handler enabled"); }
+    if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Seconds handler enabled"); }
   } else {
     tick_timer_service_subscribe(MINUTE_UNIT, &handle_minute_tick);
-    if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Seconds handler disabled"); }
+    if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Seconds handler disabled"); }
   }
 }
 
 void my_out_sent_handler(DictionaryIterator *sent, void *context) {
 // outgoing message was delivered
-  if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "AppMessage Delivered"); }
+  if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "AppMessage Delivered"); }
 }
 void my_out_fail_handler(DictionaryIterator *failed, AppMessageResult reason, void *context) {
 // outgoing message failed
-  if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "AppMessage Failed to Send: %d", reason); }
+  if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "AppMessage Failed to Send: %d", reason); }
 }
 
 void in_js_ready_handler(DictionaryIterator *received, void *context) {
@@ -1491,7 +1483,7 @@ void in_weather_handler(DictionaryIterator *received, void *context) {
     appkey = dict_find(received, AK_WEATHER_COND);
     if (appkey != NULL)     { strncpy(weather_state()->condition, appkey->value->cstring, sizeof(weather_state()->condition)-1); }
     layer_mark_dirty(weather_layer);
-    if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Weather received [%d/%d]: %d, %s", weather_state()->failures, weather_state()->requests, weather_state()->current, weather_state()->condition); }
+    if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Weather received [%d/%d]: %d, %s", weather_state()->failures, weather_state()->requests, weather_state()->current, weather_state()->condition); }
     if (weather_state()->current == 999) {
       weather_state()->failures++;
     } else {
@@ -1506,7 +1498,7 @@ void in_timezone_handler(DictionaryIterator *received, void *context) {
       timezone_offset = tz_offset->value->int8;
       update_datetime_subtext();
     }
-  if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Timezone received: %d", timezone_offset); }
+  if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Timezone received: %d", timezone_offset); }
 }
 
 void in_configuration_handler(DictionaryIterator *received, void *context) {
@@ -1516,11 +1508,11 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     Tuple *debugging = dict_find(received, AK_DEBUGGING_ON);
     if (debugging != NULL) {
       if (debugging->value->uint8 != 0) {
-        debug.general = true;
+        debug_get()->general = true;
         app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Debugging enabled.");
       } else {
-        if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Debugging disabled."); }
-        debug.general = false;
+        if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Debugging disabled."); }
+        debug_get()->general = false;
       } 
     }
 
@@ -1528,11 +1520,11 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     Tuple *debuglang = dict_find(received, AK_DEBUGLANG_ON);
     if (debuglang != NULL) {
       if (debuglang->value->uint8 != 0) {
-        debug.language = true;
-        if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Language debugging enabled."); }
+        debug_get()->language = true;
+        if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Language debugging enabled."); }
       } else {
-        debug.language = false;
-        if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Language debugging disabled."); }
+        debug_get()->language = false;
+        if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Language debugging disabled."); }
       } 
     }
 
@@ -1747,7 +1739,7 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     // AK_LANGUAGE == language, e.g. EN
     Tuple *chosen_language = dict_find(received, AK_LANGUAGE);
     if (chosen_language != NULL) {
-      if (debug.language) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Language is set to %s", chosen_language->value->cstring); }
+      if (debug_get()->language) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Language is set to %s", chosen_language->value->cstring); }
       strncpy(lang_gen_get()->language, chosen_language->value->cstring, sizeof(lang_gen_get()->language)-1);
       set_unifont();
     }
@@ -1756,7 +1748,7 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     for (int i = AK_TRANS_ABBR_SUNDAY; i <= AK_TRANS_ABBR_SATURDAY; i++ ) {
       translation = dict_find(received, i);
       if (translation != NULL) {
-        if (debug.language) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "translation for key %d is %s", i, translation->value->cstring); }
+        if (debug_get()->language) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "translation for key %d is %s", i, translation->value->cstring); }
         strncpy(lang_gen_get()->abbrDaysOfWeek[i - AK_TRANS_ABBR_SUNDAY], translation->value->cstring, sizeof(lang_gen_get()->abbrDaysOfWeek[i - AK_TRANS_ABBR_SUNDAY])-1);
       }
     }
@@ -1765,7 +1757,7 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     for (int i = AK_TRANS_SUNDAY; i <= AK_TRANS_SATURDAY; i++ ) {
       translation = dict_find(received, i);
       if (translation != NULL) {
-        if (debug.language) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "translation for key %d is %s", i, translation->value->cstring); }
+        if (debug_get()->language) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "translation for key %d is %s", i, translation->value->cstring); }
         strncpy(lang_days_get()->DaysOfWeek[i - AK_TRANS_SUNDAY], translation->value->cstring, sizeof(lang_days_get()->DaysOfWeek[i - AK_TRANS_SUNDAY])-1);
       }
     }
@@ -1774,7 +1766,7 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     for (int i = AK_TRANS_ABBR_JANUARY; i <= AK_TRANS_ABBR_DECEMBER; i++ ) {
       translation = dict_find(received, i);
       if (translation != NULL) {
-        if (debug.language) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "translation for key %d is %s", i, translation->value->cstring); }
+        if (debug_get()->language) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "translation for key %d is %s", i, translation->value->cstring); }
         strncpy(lang_gen_get()->abbrMonthsNames[i - AK_TRANS_ABBR_JANUARY], translation->value->cstring, sizeof(lang_gen_get()->abbrMonthsNames[i - AK_TRANS_ABBR_JANUARY])-1);
       }
     }
@@ -1783,7 +1775,7 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     for (int i = AK_TRANS_JANUARY; i <= AK_TRANS_DECEMBER; i++ ) {
       translation = dict_find(received, i);
       if (translation != NULL) {
-        if (debug.language) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "translation for key %d is %s", i, translation->value->cstring); }
+        if (debug_get()->language) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "translation for key %d is %s", i, translation->value->cstring); }
         strncpy(lang_months_get()->monthsNames[i - AK_TRANS_JANUARY], translation->value->cstring, sizeof(lang_months_get()->monthsNames[i - AK_TRANS_JANUARY])-1);
       }
     }
@@ -1792,7 +1784,7 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     for (int i = AK_TRANS_CONNECTED; i <= AK_TRANS_DISCONNECTED; i++ ) {
       translation = dict_find(received, i);
       if (translation != NULL) {
-        if (debug.language) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "translation for key %d is %s", i, translation->value->cstring); }
+        if (debug_get()->language) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "translation for key %d is %s", i, translation->value->cstring); }
         strncpy(lang_gen_get()->statuses[i - AK_TRANS_CONNECTED], translation->value->cstring, sizeof(lang_gen_get()->statuses[i - AK_TRANS_CONNECTED])-1);
       }
     }
@@ -1804,7 +1796,7 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     for (int i = AK_TRANS_TIME_AM; i <= AK_TRANS_TIME_PM; i++ ) {
       translation = dict_find(received, i);
       if (translation != NULL) {
-        if (debug.language) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "translation for key %d is %s", i, translation->value->cstring); }
+        if (debug_get()->language) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "translation for key %d is %s", i, translation->value->cstring); }
         strncpy(lang_gen_get()->abbrTime[i - AK_TRANS_TIME_AM], translation->value->cstring, sizeof(lang_gen_get()->abbrTime[i - AK_TRANS_TIME_AM])-1);
       }
     }
@@ -1813,17 +1805,17 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
 
     int result = 0;
     result = persist_write_data(PK_SETTINGS, settings_get(), sizeof(persist) );
-    if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Wrote %d bytes into settings", result); }
+    if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Wrote %d bytes into settings", result); }
     result = persist_write_data(PK_LANG_GEN, lang_gen_get(), sizeof(persist_general_lang) );
-    if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Wrote %d bytes into lang_gen", result); }
+    if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Wrote %d bytes into lang_gen", result); }
     result = persist_write_data(PK_LANG_MONTHS, lang_months_get(), sizeof(persist_months_lang) );
-    if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Wrote %d bytes into lang_months", result); }
+    if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Wrote %d bytes into lang_months", result); }
     result = persist_write_data(PK_LANG_DAYS, lang_days_get(), sizeof(persist_days_lang) );
-    if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Wrote %d bytes into lang_days", result); }
-    result = persist_write_data(PK_DEBUGGING, &debug, sizeof(debug) );
-    if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Wrote %d bytes into debug", result); }
+    if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Wrote %d bytes into lang_days", result); }
+    result = persist_write_data(PK_DEBUGGING, debug_get(), sizeof(persist_debug) );
+    if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Wrote %d bytes into debug", result); }
     result = persist_write_data(PK_ADV_SETTINGS, adv_settings_get(), sizeof(persist_adv_settings) );
-    if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Wrote %d bytes into adv_settings", result); }
+    if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Wrote %d bytes into adv_settings", result); }
 
     // ==== Implemented SDK ====
     // Battery
@@ -1848,7 +1840,7 @@ void my_in_rcv_handler(DictionaryIterator *received, void *context) {
 // incoming message received
   Tuple *message_type = dict_find(received, AK_MESSAGE_TYPE);
   if (message_type != NULL) {
-    if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Message type %d received", message_type->value->uint8); }
+    if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Message type %d received", message_type->value->uint8); }
     switch ( message_type->value->uint8 ) {
     case AK_SEND_WATCH_VERSION:
       in_js_ready_handler(received, context);
@@ -1868,7 +1860,7 @@ void my_in_rcv_handler(DictionaryIterator *received, void *context) {
 
 void my_in_drp_handler(AppMessageResult reason, void *context) {
 // incoming message dropped
-  if (debug.general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "AppMessage Dropped: %d", reason); }
+  if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "AppMessage Dropped: %d", reason); }
 }
 
 static void app_message_init(void) {
@@ -1889,8 +1881,8 @@ static void app_message_init(void) {
 
 static void init(void) {
 
-  if (DEBUGLOG == 1) { debug.general = true; }
-  if (TRANSLOG == 1) { debug.language = true; }
+  if (DEBUGLOG == 1) { debug_get()->general = true; }
+  if (TRANSLOG == 1) { debug_get()->language = true; }
   currentTime = get_time();
 
   app_message_init();
@@ -1911,7 +1903,7 @@ static void init(void) {
       persist_read_data(PK_LANG_DAYS, lang_days_get(), sizeof(persist_days_lang) );
     }
     if (persist_exists(PK_DEBUGGING)) {
-      persist_read_data(PK_DEBUGGING, &debug, sizeof(debug) );
+      persist_read_data(PK_DEBUGGING, debug_get(), sizeof(persist_debug) );
     }
     //persist_write_data(PK_ADV_SETTINGS, adv_settings_get(), sizeof(persist_adv_settings) ); // XXX TODO reset to defaults, for testing...
     if (persist_exists(PK_ADV_SETTINGS)) {
@@ -1919,8 +1911,8 @@ static void init(void) {
     }
   }
   // re-initialize this, if it was set, since we're storing those values persistently as well...
-  if (DEBUGLOG == 1) { debug.general = true; }
-  if (TRANSLOG == 1) { debug.language = true; }
+  if (DEBUGLOG == 1) { debug_get()->general = true; }
+  if (TRANSLOG == 1) { debug_get()->language = true; }
 
   if (adv_settings_get()->weather_update) {
     weather_request = app_timer_register(1250, &request_weather, NULL);

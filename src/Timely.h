@@ -7,14 +7,7 @@
 
 #include "locale.h"
 
-typedef struct persist_debug { // 6 bytes
-  bool general;              // debugging messages (general)
-  bool language;             // debugging messages (language/translation)
-  bool reserved_1;           // debugging messages (reserved to spare updates later)
-  bool reserved_2;           // debugging messages (reserved to spare updates later)
-  bool reserved_3;           // debugging messages (reserved to spare updates later)
-  bool reserved_4;           // debugging messages (reserved to spare updates later)
-} __attribute__((__packed__)) persist_debug;
+#include "debug.h"
 
 
 
