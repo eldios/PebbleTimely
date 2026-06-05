@@ -37,8 +37,8 @@ static void calendar_render(Layer *me, GContext* ctx) {
     int weeks  =  3;  // always display 3 weeks: # previous, current, # next
         
     GFont current = cal_normal;
-    int font_vert_offset = 0;
-    if (strcmp(lang_gen_get()->language,"RU") == 0 ) { font_vert_offset = -2; }
+    int font_vert_offset = -4; // lift the weekday header clear of the grid below it
+    if (strcmp(lang_gen_get()->language,"RU") == 0 ) { font_vert_offset = -6; }
 
     // generate a light background for the calendar grid
     if (settings_get()->grid) {
@@ -56,8 +56,8 @@ static void calendar_render(Layer *me, GContext* ctx) {
 
       if (col == specialDay) {
         current = cal_bold;
-        font_vert_offset = -3;
-        if (strcmp(lang_gen_get()->language,"RU") == 0 ) { font_vert_offset = -2; }
+        font_vert_offset = -6;
+        if (strcmp(lang_gen_get()->language,"RU") == 0 ) { font_vert_offset = -6; }
       }
       // draw the cell background
     //  graphics_fill_rect(ctx, GRect (CAL_WIDTH * col + CAL_LEFT + CAL_GAP, 0, CAL_WIDTH - CAL_GAP, CAL_HEIGHT - CAL_GAP), 0, GCornerNone);
@@ -70,8 +70,8 @@ static void calendar_render(Layer *me, GContext* ctx) {
           graphics_draw_text(ctx, lang_gen_get()->abbrDaysOfWeek[weekday], current, GRect(CAL_WIDTH * col + CAL_LEFT + CAL_GAP + 1, CAL_GAP + font_vert_offset, CAL_WIDTH, CAL_HEIGHT), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL); 
         }
         current = cal_normal;
-        font_vert_offset = 0;
-        if (strcmp(lang_gen_get()->language,"RU") == 0 ) { font_vert_offset = -2; }
+        font_vert_offset = -4; // restore the header default (not 0) for columns after today
+        if (strcmp(lang_gen_get()->language,"RU") == 0 ) { font_vert_offset = -6; }
       }
     }
 
