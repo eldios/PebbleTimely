@@ -1,3 +1,11 @@
+var CONFIG_SPEC = require('./config');
+var buildConfigPage = require('./configpage');
+
+// The bundled SunCalc library (below) used to attach itself to `window`; under
+// the CommonJS bundler there is no global object, so it populates this
+// module-scoped variable instead (see its assignment further down).
+var SunCalc;
+
 var CLIMACON = {
   'cloud'            : '!',
   'cloud_day'        : '"',
@@ -76,231 +84,23 @@ var CLIMACON = {
   'cloud_down'       : 'j'
 };
 
-var OWMclimacon= {
-// Thunderstorm
-  200 : CLIMACON['lightning'], // thunderstorm with light rain
-  201 : CLIMACON['lightning'], // thunderstorm with rain
-  202 : CLIMACON['lightning'], // thunderstorm with heavy rain
-  210 : CLIMACON['lightning'], // light thunderstorm
-  211 : CLIMACON['lightning'], // thunderstorm
-  212 : CLIMACON['lightning'], // heavy thunderstorm
-  221 : CLIMACON['lightning'], // ragged thunderstorm
-  230 : CLIMACON['lightning'], // thunderstorm with light drizzle
-  231 : CLIMACON['lightning'], // thunderstorm with drizzle
-  232 : CLIMACON['lightning'], // thunderstorm with heavy drizzle
-// Drizzle
-  300 : CLIMACON['drizzle'], // light intensity drizzle
-  301 : CLIMACON['drizzle'], // drizzle
-  302 : CLIMACON['drizzle'], // heavy intensity drizzle
-  310 : CLIMACON['drizzle'], // light intensity drizzle rain
-  311 : CLIMACON['drizzle'], // drizzle rain
-  312 : CLIMACON['drizzle'], // heavy intensity drizzle rain
-  313 : CLIMACON['showers'], // shower rain and drizzle
-  314 : CLIMACON['showers'], // heavy shower rain and drizzle
-  321 : CLIMACON['showers'], // shower drizzle
-// Rain
-  500 : CLIMACON['rain'], // light rain
-  501 : CLIMACON['rain'], // moderate rain
-  502 : CLIMACON['downpour'], // heavy intensity rain
-  503 : CLIMACON['downpour'], // very heavy rain
-  504 : CLIMACON['downpour'], // extreme rain
-  511 : CLIMACON['downpour'], // freezing rain
-  520 : CLIMACON['showers'], // light intensity shower rain
-  521 : CLIMACON['showers'], // shower rain
-  522 : CLIMACON['showers'], // heavy intensity shower rain
-  531 : CLIMACON['showers'], // ragged shower rain
-// Snow
-  600 : CLIMACON['snow'], // light snow
-  601 : CLIMACON['snow'], // snow
-  602 : CLIMACON['snow'], // heavy snow
-  611 : CLIMACON['sleet'], // sleet
-  612 : CLIMACON['sleet'], // shower sleet
-  615 : CLIMACON['snow'], // light rain and snow
-  616 : CLIMACON['snow'], // rain and snow
-  620 : CLIMACON['snow'], // light shower snow
-  621 : CLIMACON['snow'], // shower snow
-  622 : CLIMACON['snow'], // heavy shower snow
-// Atmosphere
-  701 : CLIMACON['haze'], // mist
-  711 : CLIMACON['haze'], // smoke
-  721 : CLIMACON['haze'], // haze
-  731 : CLIMACON['haze'], // Sand/Dust Whirls
-  741 : CLIMACON['fog'], // Fog
-  751 : CLIMACON['haze'], // sand
-  761 : CLIMACON['haze'], // dust
-  762 : CLIMACON['haze'], // VOLCANIC ASH
-  771 : CLIMACON['wind'], // SQUALLS
-  781 : CLIMACON['tornado'], // TORNADO
-// Clouds
-  800 : CLIMACON['sun'], // sky is clear
-  801 : CLIMACON['cloud'], // few clouds
-  802 : CLIMACON['cloud'], // scattered clouds
-  803 : CLIMACON['cloud'], // broken clouds
-  804 : CLIMACON['cloud'], // overcast clouds
-// Extreme
-  900 : CLIMACON['tornado'], // tornado
-  901 : CLIMACON['tornado'], // tropical storm
-  902 : CLIMACON['tornado'], // hurricane
-  903 : CLIMACON['temp_low'], // cold
-  904 : CLIMACON['temp_high'], // hot
-  905 : CLIMACON['wind'], // windy
-  906 : CLIMACON['hail'], // hail 
-// Additional
-  950 : CLIMACON['set'], // Setting
-  951 : CLIMACON['sun'], // Calm
-  952 : CLIMACON['sun'], // Light breeze
-  953 : CLIMACON['sun'], // Gentle Breeze
-  954 : CLIMACON['sun'], // Moderate breeze
-  955 : CLIMACON['sun'], // Fresh Breeze
-  956 : CLIMACON['wind'], // Strong breeze
-  957 : CLIMACON['wind'], // High wind, near gale
-  958 : CLIMACON['wind'], // Gale
-  959 : CLIMACON['wind'], // Severe Gale
-  960 : CLIMACON['lightning'], // Storm
-  961 : CLIMACON['lightning'], // Violent Storm
-  962 : CLIMACON['tornado'], // Hurricane 
-};
 
-var YWclimacon= {
-  0 : CLIMACON['tornado'], //tornado
-  1 : CLIMACON['tornado'], //tropical storm
-  2 : CLIMACON['tornado'], //hurricane
-  3 : CLIMACON['lightning'], //severe thunderstorms
-  4 : CLIMACON['lightning'], //thunderstorms
-  5 : CLIMACON['sleet'], //mixed rain and snow
-  6 : CLIMACON['sleet'], //mixed rain and sleet
-  7 : CLIMACON['sleet'], //mixed snow and sleet
-  8 : CLIMACON['hail'], //freezing drizzle
-  9 : CLIMACON['drizzle'], //drizzle
-  10 : CLIMACON['hail'], //freezing rain
-  11 : CLIMACON['showers'], //showers
-  12 : CLIMACON['showers'], //showers
-  13 : CLIMACON['snow'], //snow flurries
-  14 : CLIMACON['snow'], //light snow showers
-  15 : CLIMACON['snow'], //blowing snow
-  16 : CLIMACON['snow'], //snow
-  17 : CLIMACON['hail'], //hail
-  18 : CLIMACON['sleet'], //sleet
-  19 : CLIMACON['haze'], //dust
-  20 : CLIMACON['fog'], //foggy
-  21 : CLIMACON['haze'], //haze
-  22 : CLIMACON['haze'], //smoky
-  23 : CLIMACON['wind'], //blustery
-  24 : CLIMACON['wind'], //windy
-  25 : CLIMACON['temp_low'], //cold
-  26 : CLIMACON['cloud'], //cloudy
-  27 : CLIMACON['cloud_night'], //mostly cloudy (night)
-  28 : CLIMACON['cloud_day'], //mostly cloudy (day)
-  29 : CLIMACON['cloud_night'], //partly cloudy (night)
-  30 : CLIMACON['cloud_day'], //partly cloudy (day)
-  31 : CLIMACON['moon'], //clear (night)
-  32 : CLIMACON['sun'], //sunny
-  33 : CLIMACON['moon'], //fair (night)
-  34 : CLIMACON['sun'], //fair (day)
-  35 : CLIMACON['hail'], //mixed rain and hail
-  36 : CLIMACON['temp_high'], //hot
-  37 : CLIMACON['lightning'], //isolated thunderstorms
-  38 : CLIMACON['lightning'], //scattered thunderstorms
-  39 : CLIMACON['lightning'], //scattered thunderstorms
-  40 : CLIMACON['showers'], //scattered showers
-  41 : CLIMACON['snow'], //heavy snow
-  42 : CLIMACON['snow'], //scattered snow showers
-  43 : CLIMACON['snow'], //heavy snow
-  44 : CLIMACON['cloud'], //partly cloudy
-  45 : CLIMACON['lightning'], //thundershowers
-  46 : CLIMACON['snow'], //snow showers
-  47 : CLIMACON['lightning'], //isolated thundershowers
-  3200 : CLIMACON['cloud_down'], //not available
-};
-
-var options = JSON.parse(localStorage.getItem('timely_options'));
-//console.log('read options: ' + JSON.stringify(options));
-//if (options === null) options = { "default" : "value", "foo" : "bar"};
-
-function getWeatherFromLatLong(latitude, longitude) {
-  var response;
-  var woeid = -1;
-  var query = encodeURI("select woeid from geo.placefinder where text=\""+latitude+","+longitude + "\" and gflags=\"R\"");
-  var url = "http://query.yahooapis.com/v1/public/yql?q=" + query + "&format=json";
-  var req = new XMLHttpRequest();
-  req.open('GET', url, true);
-  req.onload = function(e) {
-    if (req.readyState == 4) {
-      if (req.status == 200) {
-        response = JSON.parse(req.responseText);
-        if (response) {
-          woeid = response.query.results.Result.woeid;
-          getWeatherFromWoeid(woeid);
-        }
-      } else {
-        console.log("Error fetching woeid for " + url);
-      }
-    }
-  }
-  req.send(null);
-}
-
-function getWeatherFromLocation(location_name) {
-  var response;
-  var woeid = -1;
-  var query = encodeURI("select woeid from geo.places(1) where text=\"" + location_name + "\"");
-  var url = "http://query.yahooapis.com/v1/public/yql?q=" + query + "&format=json";
-  var req = new XMLHttpRequest();
-  req.open('GET', url, true);
-  req.onload = function(e) {
-    if (req.readyState == 4) {
-      if (req.status == 200) {
-        // console.log(req.responseText);
-        response = JSON.parse(req.responseText);
-        if (response) {
-          woeid = response.query.results.place.woeid;
-          getWeatherFromWoeid(woeid);
-        }
-      } else {
-        console.log("Error fetching woeid for " + url);
-      }
-    }
-  }
-  req.send(null);
-}
-
-function getWeatherFromWoeid(woeid) {
-  if (weatherFormat === 1) { units = "metric"; }
-  var query = encodeURI("select item.condition from weather.forecast where woeid = " + woeid +
-                        " and u = " + (weatherFormat ? "\"c\"" : "\"f\""));
-  var url = "http://query.yahooapis.com/v1/public/yql?q=" + query + "&format=json";
-
-  var response;
-  var req = new XMLHttpRequest();
-  req.open('GET', url, true);
-  req.onload = function(e) {
-    if (req.readyState == 4) {
-      if (req.status == 200) {
-        response = JSON.parse(req.responseText);
-        if (response) {
-          var condition = response.query.results.channel.item.condition;
-          temperature = condition.temp;
-          icon = YWclimacon[condition.code];
-          console.log("YW Weather: " + temperature + "; " + icon + " = " + condition.text);
-          sendWeather(Number(temperature), icon);
-        }
-      } else {
-        console.log("Error");
-      }
-    }
-  }
-  req.send(null);
-}
-
-function sendWeather(temp, cond_icon) {
-  if (isItNight() && cond_icon == CLIMACON['sun']) { cond_icon = getMoonIcon(); }
-  if (cond_icon == CLIMACON['moon']) { cond_icon = getMoonIcon(); }
-  console.log('Sending Weather: ' + temp + '  ' + cond_icon);
-  Pebble.sendAppMessage({
+function sendWeather(temp, cond_icon, city, lat, lon) {
+  // Day/night (and the clear-night moon glyph) are already resolved by the
+  // weather mapping using the provider's is_day flag.
+  console.log('Sending Weather: ' + temp + '  ' + cond_icon + '  ' + (city || ''));
+  var msg = {
     message_type: 106,
     weather_temp: temp,
     weather_cond: cond_icon,
-  });
+    weather_city: city || '',
+  };
+  // Coordinates power the sunrise/sunset complications and the Auto theme.
+  if (lat != null && lon != null) {
+    msg.weather_lat = lat.toFixed(2);
+    msg.weather_lon = lon.toFixed(2);
+  }
+  Pebble.sendAppMessage(msg);
 }
 
 var locationOptions = { "timeout": 15000, "maximumAge": 60000, "enableHighAccuracy": false }; // 15 second timeout, allow 1 min cached
@@ -309,29 +109,27 @@ var locationWatcher;
 var lastCoordinates;
 var weatherFormat;
 
+// Report the phone's battery level to the watch (Web Battery API, where the
+// runtime exposes it; silently skipped otherwise).
+function updatePhoneBattery() {
+    if (!navigator.getBattery) { return; }
+    navigator.getBattery().then(function (b) {
+        Pebble.sendAppMessage({ message_type: 110, phone_battery: Math.round(b.level * 100) });
+    }).catch(function () {});
+}
+
 Pebble.addEventListener("ready", function (e) {
-//    console.log("Connect! " + e.ready);
-//    locationWatcher = window.navigator.geolocation.watchPosition(weatherLocationSuccess, locationError, locationOptions);
-//    navigator.geolocation.clearWatch(locationWatcher);
     getWatchVersion();
+    updatePhoneBattery();
+    setInterval(updatePhoneBattery, 30 * 60 * 1000); // refresh every 30 min
 });
 
 Pebble.addEventListener("showConfiguration", function () {
-    //console.log("Configuration window launching...");
-    var baseURL, pebtok, nocache;
-    baseURL = 'http://www.cyn.org/pebble/timely/';
-    pebtok  = '&pat=' + Pebble.getAccountToken();
-    nocache = '&_=' + new Date().getTime();
-    if (window.localStorage.getItem("timely_options") !== null) {
-        options = JSON.parse(window.localStorage.timely_options);
-    }
-    if (window.localStorage.getItem("version_config") !== null) {
-        Pebble.openURL(baseURL + window.localStorage.version_config + ".php?" + pebtok + nocache);
-        console.log(baseURL + window.localStorage.version_config + ".php?" + pebtok + nocache);
-    } else { // in case we never received the message / new install
-        Pebble.openURL(baseURL + "2.3.0.php?" + pebtok + nocache);
-        console.log(baseURL + "2.3.0.php?" + pebtok + nocache);
-    }
+    var current = {};
+    try { current = JSON.parse(localStorage.getItem("timely_settings") || "{}"); } catch (err) {}
+    var html = buildConfigPage(CONFIG_SPEC, current);
+    // Self-contained page, no server: the watch hands the whole page to the phone.
+    Pebble.openURL("data:text/html," + encodeURIComponent(html));
 });
 
 function getWatchVersion() {
@@ -404,63 +202,65 @@ Pebble.addEventListener("appmessage", function (e) {
     }
 });
 
-function fetchOWMWeather(latitude, longitude) {
-  var response;
+// Map a WMO weather code (Open-Meteo) to a climacons glyph; day/night aware.
+function wmoToClimacon(code, isDay) {
+  if (code === 0)                  { return isDay ? CLIMACON['sun'] : getMoonIcon(); }   // clear
+  if (code === 1 || code === 2)    { return isDay ? CLIMACON['cloud_day'] : CLIMACON['cloud_night']; } // mainly clear / partly cloudy
+  if (code === 3)                  { return CLIMACON['cloud']; }       // overcast
+  if (code === 45 || code === 48)  { return isDay ? CLIMACON['fog_day'] : CLIMACON['fog_night']; }     // fog
+  if (code >= 51 && code <= 57)    { return CLIMACON['drizzle']; }     // drizzle (incl. freezing)
+  if (code >= 61 && code <= 65)    { return CLIMACON['rain']; }        // rain
+  if (code === 66 || code === 67)  { return CLIMACON['sleet']; }       // freezing rain
+  if (code >= 71 && code <= 77)    { return CLIMACON['snow']; }        // snow
+  if (code >= 80 && code <= 82)    { return CLIMACON['showers']; }     // rain showers
+  if (code === 85 || code === 86)  { return CLIMACON['flurries']; }    // snow showers
+  if (code >= 95)                  { return CLIMACON['lightning']; }   // thunderstorm
+  return CLIMACON['cloud'];
+}
+
+// Reverse-geocode coordinates to a city name (free, no key, https). Best-effort:
+// calls back with "" on any failure so weather still updates.
+function reverseGeocode(latitude, longitude, cb) {
   var req = new XMLHttpRequest();
-//http://api.openweathermap.org/data/2.5/weather?lat=35.8415051596573&lon=-78.55771335780486&cnt=1&units=metric
-//http://api.openweathermap.org/data/2.5/weather?lat=35.8415051596573&lon=-78.55771335780486&cnt=1&units=imperial
-  var units = "imperial";
-  if (weatherFormat === 1) { units = "metric"; }
-  req.open('GET', "http://api.openweathermap.org/data/2.5/weather?" +
-    "lat=" + latitude + "&lon=" + longitude + "&appid=fdc43ca42ea6a45d9c73a810f840aa55" + "&cnt=1" + "&units=" + units, true);
-  req.onload = function(e) {
-    if (req.readyState == 4) {
-      if(req.status == 200) {
-        //console.log('Weather Response: ' + req.responseText);
-        response = JSON.parse(req.responseText);
-        var temp, temp_min, temp_max, icon, city;
-        if (response && response.weather && response.weather.length > 0) {
-          var weatherResult = response;
-          temp = Math.round(weatherResult.main.temp);
-          temp_min = Math.round(weatherResult.main.temp_min);
-          temp_max = Math.round(weatherResult.main.temp_max);
-          cond_main = weatherResult.weather[0].main;
-          cond_desc = weatherResult.weather[0].description;
-          cond_icon = OWMclimacon[weatherResult.weather[0].id];
-          city = weatherResult.name;
+  req.open('GET', "https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=" +
+    latitude + "&longitude=" + longitude + "&localityLanguage=en", true);
+  req.timeout = 10000;
+  req.onload = function() {
+    var city = "";
+    try { var r = JSON.parse(req.responseText); city = r.city || r.locality || ""; } catch (e) {}
+    cb(city);
+  };
+  req.onerror = function() { cb(""); };
+  req.ontimeout = function() { cb(""); };
+  req.send(null);
+}
 
-            console.log("OWM Weather: " + temp + "; " + cond_icon + " = " + cond_main + ", " + cond_desc);
-/*
-          console.log('temp: ' + temp);
-          console.log('temp_min: ' + temp_min);
-          console.log('temp_max: ' + temp_max);
-          console.log('city:  ' + city);
-          console.log('cond: ' + cond_main);
-          console.log('cond_desc: ' + cond_desc);
-          console.log('cond_icon: ' + cond_icon);
-            weather_temp_min: temp_min,
-            weather_temp_max: temp_max,
-*/
-          sendWeather(temp, cond_icon);
-        } else {
-          for(var i in dataObj) {
-                console.log('dO:' + i + ' --- ' + dataObj[i]);
-            }
-        }
-
-      } else {
-        console.log("Error");
-      }
-    }
-  }
+function fetchWeather(latitude, longitude) {
+  // Open-Meteo: https, no API key, returns is_day for reliable day/night.
+  var unit = (weatherFormat === 1) ? "&temperature_unit=fahrenheit" : "";
+  var req = new XMLHttpRequest();
+  req.open('GET', "https://api.open-meteo.com/v1/forecast?latitude=" + latitude +
+    "&longitude=" + longitude + "&current=temperature_2m,weather_code,is_day" + unit, true);
+  req.timeout = 15000;
+  req.onload = function() {
+    if (req.readyState !== 4) { return; }
+    if (req.status !== 200) { console.log("Weather HTTP " + req.status); return; }
+    try {
+      var r = JSON.parse(req.responseText);
+      var temp = Math.round(r.current.temperature_2m);
+      var icon = wmoToClimacon(r.current.weather_code, r.current.is_day === 1);
+      console.log("Open-Meteo: " + temp + "; code " + r.current.weather_code + "; day " + r.current.is_day);
+      reverseGeocode(latitude, longitude, function(city) { sendWeather(temp, icon, city, latitude, longitude); });
+    } catch (e) { console.log("Weather parse error: " + e); }
+  };
+  req.onerror = function() { console.log("Weather request failed"); };
+  req.ontimeout = function() { console.log("Weather request timed out"); };
   req.send(null);
 }
 
 function weatherLocationSuccess(pos) {
   lastCoordinates = pos.coords;
-  //console.log('Weather: location found (' + lastCoordinates.latitude + ', ' + lastCoordinates.longitude + '): ');
-  fetchOWMWeather(lastCoordinates.latitude, lastCoordinates.longitude); // OWM: Open Weather Map
-  //getWeatherFromLatLong(lastCoordinates.latitude, lastCoordinates.longitude); // YW: Yahoo Weather
+  fetchWeather(lastCoordinates.latitude, lastCoordinates.longitude);
 }
 
 function locationError(err) {
@@ -509,34 +309,27 @@ V = waning crescent 0.25 +
     return moon;
 }
 
-function b64_to_utf8( str ) {
-  return decodeURIComponent(escape(base64.decode( str.replace(/ +/g, '+') )));
-}
-
 Pebble.addEventListener("webviewclosed", function (e) {
-    //console.log("Configuration closed");
-    //console.log("Response = " + e.response.length + "   " + e.response);
-    if (e.response !== undefined && e.response !== '' && e.response !== 'CANCELLED') { // user clicked Save/Submit, not Cancel/Done
-        var options, web;
-        options = JSON.parse(b64_to_utf8(e.response));
-        window.localStorage.timely_options = JSON.stringify(options);
-        web = options.web;
-        delete options.web; // remove the 'web' object from our response, which has preferences such as language...
-        options[15] = web.lang; // re-inject the language
-        if (options[10] === 1) { // debugging is on...
-          console.log("Options = " + JSON.stringify(options));
+    if (!e || !e.response) { return; } // user cancelled
+
+    // The page sends only the keys that changed. Merge them into the stored
+    // settings (don't overwrite) so the config page keeps the full picture and
+    // doesn't show untouched settings as reset on the next open.
+    var dict;
+    try { dict = JSON.parse(decodeURIComponent(e.response)); } catch (err) { return; }
+    var stored = {};
+    try { stored = JSON.parse(localStorage.getItem("timely_settings") || "{}"); } catch (err) {}
+    for (var k in dict) { stored[k] = dict[k]; }
+    localStorage.setItem("timely_settings", JSON.stringify(stored));
+
+    Pebble.sendAppMessage(dict,
+        function (e) {
+            console.log("Delivered config with transactionId=" + e.data.transactionId);
+        },
+        function (e) {
+            console.log("Unable to deliver config: " + e.data.error.message);
         }
-        Pebble.sendAppMessage(options,
-            function (e) {
-                console.log("Successfully delivered message with transactionId=" + e.data.transactionId);
-            },
-            function (e) {
-                console.log("Unable to deliver message with transactionId=" + e.data.transactionId + " Error is: " + e.data.error.message);
-            }
-            );
-    } else if (e.response === 'CANCELLED') {
-        console.log("Android misbehaving on save due to embedded space in e.response... ignoring");
-    }
+        );
 });
 
 
@@ -625,7 +418,7 @@ function getSunCoords(d) {
 }
 
 
-var SunCalc = {};
+SunCalc = {};
 
 
 // calculates sun position for a given date and latitude/longitude
