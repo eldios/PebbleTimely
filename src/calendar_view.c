@@ -139,4 +139,5 @@ void calendar_create(Layer *parent, GRect frame) {
 }
 void calendar_destroy(void)           { layer_destroy(s_calendar_layer); }
 void calendar_set_hidden(bool hidden) { layer_set_hidden(s_calendar_layer, hidden); }
+void calendar_set_frame(GRect frame)  { layer_set_frame(s_calendar_layer, frame); }
 void calendar_mark_dirty(void)        { layer_mark_dirty(s_calendar_layer); }

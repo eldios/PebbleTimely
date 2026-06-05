@@ -1720,6 +1720,32 @@ void in_timezone_handler(DictionaryIterator *received, void *context) {
   if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Timezone received: %d", timezone_offset); }
 }
 
+// Recompute the adaptive layout from the current settings and reposition every
+// band live (no watchface reload). Called after config so enabling/disabling a
+// row redistributes the freed space immediately.
+static void relayout(void) {
+  if (!slot_top) { return; } // not built yet
+  compute_layout(DEVICE_WIDTH, DEVICE_HEIGHT);
+  GRect stat = GRect(0, LAYOUT_STAT, DEVICE_WIDTH, LAYOUT_SLOT_TOP);
+  layer_set_frame(statusbar, stat);
+  layer_set_frame(slot_status, stat);
+  layer_set_frame(slot_top, GRect(0, LAYOUT_SLOT_TOP, DEVICE_WIDTH, LAYOUT_SLOT_HEIGHT));
+  layer_set_frame(slot_bot, GRect(0, LAYOUT_SLOT_BOT, DEVICE_WIDTH, LAYOUT_SLOT_BOT_HEIGHT));
+  layer_set_frame(datetime_layer, GRect(0, 0, DEVICE_WIDTH, LAYOUT_SLOT_HEIGHT));
+  layer_set_frame(battery_layer, GRect(0, 0, DEVICE_WIDTH, LAYOUT_SLOT_TOP));
+  calendar_set_frame(GRect(0, 0, DEVICE_WIDTH, LAYOUT_SLOT_BOT_HEIGHT));
+  splash_set_frame(GRect(0, 0, DEVICE_WIDTH, LAYOUT_SLOT_BOT_HEIGHT));
+  text_layer_set_font(time_layer, fonts_get_system_font(time_font_key())); // band height may have changed
+  position_time_layer();   // time + weather frames within the new time band
+  statusbar_visible();
+  toggle_statusbar();
+  apply_center();
+  apply_bottom();
+  refresh_stat_slots();    // after toggle so the battery fills stay on top
+  calendar_mark_dirty();
+  layer_mark_dirty(datetime_layer);
+}
+
 void in_configuration_handler(DictionaryIterator *received, void *context) {
     // debugging first (so we can catch this message)
 
@@ -2091,8 +2117,7 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     // ==== Future improvements ====
     // Positioning - top, bottom, etc.
   apply_palette(); // re-tint text + icons for the (possibly new) theme
-  calendar_mark_dirty();
-  layer_mark_dirty(datetime_layer);
+  relayout();      // recompute + reposition the bands live for the new settings
 }
 
 void my_in_rcv_handler(DictionaryIterator *received, void *context) {

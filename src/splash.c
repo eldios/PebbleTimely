@@ -19,3 +19,4 @@ void splash_create(Layer *parent, GRect frame) {
 }
 void splash_destroy(void)            { layer_destroy(s_splash_layer); }
 void splash_set_hidden(bool hidden)  { layer_set_hidden(s_splash_layer, hidden); }
+void splash_set_frame(GRect frame)   { layer_set_frame(s_splash_layer, frame); }
