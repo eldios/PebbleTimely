@@ -61,7 +61,8 @@ static TextLayer *text_connection_layer; // status-bar slot, left (text)
 static TextLayer *text_battery_layer;
 
 static EffectLayer *inverter_layer;
-static EffectLayer *battery_meter_layer;
+static EffectLayer *battery_meter_layer; // proportional fill for the LEFT status battery (bar style)
+static EffectLayer *batt_fill_r;         // proportional fill for the RIGHT status battery (bar style)
 
 // battery info, instantiate to 'worst scenario' to prevent false hopes
 static uint8_t battery_percent = 10;
@@ -764,19 +765,73 @@ static void apply_stat_slot(TextLayer *txt, BitmapLayer *icon, uint8_t content, 
   update_slot_text(txt, content);
 }
 
+// A lone status complication is centred across the whole bar (the row is
+// dynamic like the others: one slot = centre, two = halves). Rendered into the
+// left layer/icon; the right slot is hidden by the caller. Bar style keeps its
+// side box, so it is handled by the normal two-slot path instead.
+static void apply_stat_single(uint8_t content) {
+  TextLayer *txt = text_connection_layer;
+  Layer *il = bitmap_layer_get_layer(bmp_phone_layer);
+  Layer *tl = text_layer_get_layer(txt);
+  GBitmap *bmp = (is_battery_content(content) && settings_get()->batt_style == 1) ? NULL : stat_slot_icon(content);
+  if (bmp) {                                  // icon + value, group centred
+    int gx = DEVICE_WIDTH / 2 - 27;           // ~half the icon+value group width
+    bitmap_layer_set_bitmap(bmp_phone_layer, bmp);
+    layer_set_hidden(il, false);
+    layer_set_frame(il, GRect(gx, 4, 16, 16));
+    text_layer_set_text_alignment(txt, GTextAlignmentLeft);
+    layer_set_frame(tl, GRect(gx + 18, 2, DEVICE_WIDTH - (gx + 18) - 2, 22));
+  } else {                                    // text only, centred full width
+    layer_set_hidden(il, true);
+    text_layer_set_text_alignment(txt, GTextAlignmentCenter);
+    layer_set_frame(tl, GRect(2, 2, DEVICE_WIDTH - 4, 22));
+  }
+  update_slot_text(txt, content);
+}
+
+// Position the proportional fill (an invert effect, raised above the % text so
+// the digits stay readable over the filled part) inside one battery box.
+static void set_batt_fill(EffectLayer *fl, int box_x, int box_w, int pct, bool show) {
+  if (!fl) { return; }
+  Layer *l = effect_layer_get_layer(fl);
+  if (!show || pct < 0) { layer_set_hidden(l, true); return; }
+  if (pct > 100) { pct = 100; }
+  int fillw = (box_w - 4) * pct / 100;
+  if (fillw < 1 && pct > 0) { fillw = 1; }
+  layer_set_frame(l, GRect(box_x + 2, 6, fillw, 10));
+  layer_set_hidden(l, false);
+  layer_add_child(statusbar, l); // raise to top so it inverts the box + % text
+}
+
 // Re-apply both status-bar slots (content + icon + position). Cheap; call it
 // whenever the underlying data (battery, connection) or the config changes.
 void refresh_stat_slots(void) {
   if (!text_connection_layer || !text_battery_layer) { return; } // not built yet
-  apply_stat_slot(text_connection_layer, bmp_phone_layer, settings_get()->slot_stat_l, false);
-  apply_stat_slot(text_battery_layer,    bmp_watch_layer, settings_get()->slot_stat_r, true);
-  // The bar style needs the battery_layer (which draws the outlines) visible.
-  if (battery_layer) {
-    bool bars = settings_get()->batt_style == 0 &&
-      (is_battery_content(settings_get()->slot_stat_l) || is_battery_content(settings_get()->slot_stat_r));
+  uint8_t cl = settings_get()->slot_stat_l, cr = settings_get()->slot_stat_r;
+  bool bar = settings_get()->batt_style == 0;
+  // One slot set (and not the side-drawn bar style) -> centre it; else two halves.
+  bool single = (cl && !cr) || (!cl && cr);
+  if (single && !bar) {
+    apply_stat_single(cl ? cl : cr);
+    layer_set_hidden(text_layer_get_layer(text_battery_layer), true);
+    layer_set_hidden(bitmap_layer_get_layer(bmp_watch_layer), true);
+  } else {
+    apply_stat_slot(text_connection_layer, bmp_phone_layer, cl, false);
+    apply_stat_slot(text_battery_layer,    bmp_watch_layer, cr, true);
+  }
+
+  bool bars = bar && (is_battery_content(cl) || is_battery_content(cr));
+  int half = DEVICE_WIDTH / 2;
+  if (battery_layer) { // battery_layer draws the bar outlines
     layer_set_hidden(battery_layer, !bars);
     if (bars) { layer_mark_dirty(battery_layer); }
   }
+  set_batt_fill(battery_meter_layer, 2, half - 10,
+    is_battery_content(cl) ? (cl == 15 ? battery_percent : phone_battery_percent) : -1,
+    bar && is_battery_content(cl));
+  set_batt_fill(batt_fill_r, half + 2, half - 12,
+    is_battery_content(cr) ? (cr == 15 ? battery_percent : phone_battery_percent) : -1,
+    bar && is_battery_content(cr));
 }
 
 void position_connection_layer() {
@@ -860,9 +915,9 @@ void toggle_statusbar() {
     // icon(s)
     layer_add_child(statusbar, bitmap_layer_get_layer(bmp_charging_layer));
     layer_add_child(statusbar, battery_layer);
-    layer_add_child(statusbar, effect_layer_get_layer(battery_meter_layer));
     // Keep the slot value text above battery_layer (which draws the bar-style
     // outline) so re-parenting here doesn't bury the percentage under the box.
+    // The battery fills are (re)stacked on top by refresh_stat_slots() afterwards.
     if (text_connection_layer) { layer_add_child(statusbar, text_layer_get_layer(text_connection_layer)); }
     if (text_battery_layer)    { layer_add_child(statusbar, text_layer_get_layer(text_battery_layer)); }
   } else {
@@ -880,7 +935,6 @@ void toggle_statusbar() {
     // icon(s)
     layer_add_child(datetime_layer, bitmap_layer_get_layer(bmp_charging_layer));
     layer_add_child(datetime_layer, battery_layer);
-    layer_add_child(datetime_layer, effect_layer_get_layer(battery_meter_layer));
   }
   position_date_layer();
 }
@@ -1086,9 +1140,9 @@ static void handle_battery(BatteryChargeState charge_state) {
 
   set_status_charging_icon();
 
-  refresh_stat_slots();
   statusbar_visible();
   toggle_statusbar();
+  refresh_stat_slots(); // after toggle so the battery fills end up on top
   handle_vibe_suppression();
 }
 
@@ -1426,14 +1480,20 @@ static void window_load(Window *window) {
 
   // NOTE: No more adding layers below here - the inverter layers NEED to be the last to be on top!
 
-  // hide battery meter, until we can fix the size/position later when subscribing
+  // Battery bar fills (invert effect): one per status battery slot, positioned
+  // proportionally by refresh_stat_slots(); hidden unless the bar style is used.
   battery_meter_layer = effect_layer_create(stat_bounds);
   effect_layer_add_effect(battery_meter_layer, effect_invert, NULL);
   layer_set_hidden(effect_layer_get_layer(battery_meter_layer), true);
   layer_add_child(statusbar, effect_layer_get_layer(battery_meter_layer));
+  batt_fill_r = effect_layer_create(stat_bounds);
+  effect_layer_add_effect(batt_fill_r, effect_invert, NULL);
+  layer_set_hidden(effect_layer_get_layer(batt_fill_r), true);
+  layer_add_child(statusbar, effect_layer_get_layer(batt_fill_r));
 
   statusbar_visible();
   toggle_statusbar();
+  refresh_stat_slots(); // place/raise the battery fills now the layers exist
 
   // topmost inverter layer, determines dark or light...
   inverter_layer = effect_layer_create(bounds);
@@ -1449,6 +1509,7 @@ static void window_unload(Window *window) {
   // unload anything we loaded, destroy anything we created, remove anything we added
   layer_destroy(effect_layer_get_layer(inverter_layer));
   layer_destroy(effect_layer_get_layer(battery_meter_layer));
+  layer_destroy(effect_layer_get_layer(batt_fill_r));
   layer_destroy(text_layer_get_layer(text_battery_layer));
   layer_destroy(text_layer_get_layer(text_connection_layer));
   layer_destroy(text_layer_get_layer(ampm_layer));
