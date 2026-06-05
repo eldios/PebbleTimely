@@ -55,9 +55,16 @@ static void calendar_render(Layer *me, GContext* ctx) {
       graphics_context_set_text_color(ctx, weekend ? pal.weekend : pal.fg);
 
       if (col == specialDay) {
-        current = cal_bold;
-        font_vert_offset = -6;
-        if (strcmp(lang_gen_get()->language,"RU") == 0 ) { font_vert_offset = -6; }
+        // Today's header is bold but the SAME size as the others (cal_bold is the
+        // big 18px date font, which overflows onto the grid); RU has no Latin
+        // bold so it keeps the unicode font + double-strike below.
+        if (strcmp(lang_gen_get()->language,"RU") == 0 ) {
+          current = cal_bold;
+          font_vert_offset = -6;
+        } else {
+          current = fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD);
+          font_vert_offset = -4; // same size as the others -> same offset
+        }
       }
       // draw the cell background
     //  graphics_fill_rect(ctx, GRect (CAL_WIDTH * col + CAL_LEFT + CAL_GAP, 0, CAL_WIDTH - CAL_GAP, CAL_HEIGHT - CAL_GAP), 0, GCornerNone);
