@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  test:
+    name: host tests + JS syntax
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Pure-logic modules compile and run on the host (no Pebble SDK needed),
+      # covering layout, calendar, suntimes, time/date formatting, vibes and the
+      # clock-font selection. The full per-platform SDK build + warning-strict
+      # compile run locally via `tools/test.sh`.
+      - name: Host unit tests
+        run: |
+          gcc -std=c11 -DUNIT_TEST -Isrc -Itests tests/test_*.c \
+            src/layout.c src/calendar.c src/suntimes.c src/timefmt.c src/vibes.c src/math.c \
+            -lm -o timely_utest
+          ./timely_utest
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: PebbleKit JS syntax check
+        run: |
+          for f in src/js/*.js; do
+            echo "checking $f"
+            node --check "$f"
+          done

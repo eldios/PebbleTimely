@@ -1,52 +1,78 @@
-# TimelyNG
+<div align="center">
 
-A calendar watchface for Pebble — current date & time (with optional weather)
-up top, a compact 3‑week calendar below, and fully configurable rows of
-"complications" you can place where you like.
+# ⌚ TimelyNG
 
-**Version 0.0.1.**
+**A calendar watchface for Pebble — date, time & weather up top, a 3‑week
+calendar below, and fully configurable complication rows you arrange yourself.**
 
-## Homage & inspiration
+[![CI](https://github.com/eldios/TimelyNG/actions/workflows/ci.yml/badge.svg)](https://github.com/eldios/TimelyNG/actions/workflows/ci.yml)
+![Version](https://img.shields.io/badge/version-0.0.1-blue)
+![Platforms](https://img.shields.io/badge/Pebble-emery%20·%20flint%20·%20basalt%20·%20diorite-orange)
+![Language](https://img.shields.io/badge/C-C99-555?logo=c)
+![PebbleKit JS](https://img.shields.io/badge/config-PebbleKit%20JS-f5a623?logo=javascript&logoColor=white)
+![SDK](https://img.shields.io/badge/Pebble%20SDK-4.x%20(Core%20Devices)-black)
+
+</div>
+
+---
+
+## 🙏 Homage & inspiration
 
 TimelyNG is **freely inspired by, and an homage to, the original *Timely* /
 *PebbleTimely* watchface and its community forks** — in particular
 [Andrew129260/Timely‑2](https://github.com/Andrew129260/Timely-2) and
-[alan-johnson/PebbleTimely](https://github.com/alan-johnson/PebbleTimely).
+[alan‑johnson/PebbleTimely](https://github.com/alan-johnson/PebbleTimely).
 It carries forward their ideas and spirit (the calendar‑centric layout, the
 localizable date/time, the complication slots), rebuilt for the modern
-Core Devices Pebble SDK and the new hardware. All credit for the original
+**Core Devices Pebble SDK** and the new hardware. All credit for the original
 concept goes to those projects; any bugs here are mine.
 
-## What it shows
+## ✨ Why TimelyNG (what's different)
 
-- A **status bar** plus two more configurable rows (**above the time** and
-  **above the calendar**). Each row holds **one complication (centred) or two
-  (side by side)**; empty a row and the freed space goes back to the clock and
-  calendar — the layout is adaptive and reflows live when the config changes.
-- **Complications** (one shared, alphabetical menu for every slot): date, day,
-  month, week number, day‑of‑year / days‑left, seconds, AM/PM, timezone, a
-  second time zone, sunrise, sunset, moon phase, weather location, and **watch
-  battery, phone battery & Bluetooth**.
-- **Weather** (Open‑Meteo, no API key) — condition icon + temperature, sized
-  per screen.
-- **Battery styles**: a filling bar with the % inside, plain text, icon + text,
-  or bar + icon.
-- **Calendar**: previous / current / next week, today accented on colour
+Compared to the classic Timely and its forks, TimelyNG adds:
+
+- **Configurable complication *rows*, not fixed slots.** Three rows — status
+  bar, above the time, above the calendar — and each holds **one complication
+  (centred) or two (side by side)**.
+- **One unified, alphabetical menu for every slot**, including things that used
+  to be hard‑wired: **watch battery, phone battery, Bluetooth, and the date
+  itself** — put any of them anywhere.
+- **Adaptive layout that reflows live.** Empty a row and the freed space is
+  given back to the clock and calendar; the **clock font auto‑scales** to the
+  space available — and it all updates the moment you save the config, no
+  reload.
+- **Multiple battery styles:** a filling bar with the % *inside*, plain text,
+  icon + text, or bar + icon.
+- **Open‑Meteo weather over HTTPS, no API key**, sized per screen.
+- **100 % offline configuration** — no server, no CDN, no external host.
+- **Built for 2026 hardware** (Pebble Time 2, Pebble 2 Duo) on the current SDK,
+  with a local test gate that mirrors the cloud's strict build flags.
+
+## 🧩 What it shows
+
+- **Complications** (shared menu): date, day, month, week number,
+  day‑of‑year / days‑left, seconds, AM/PM, timezone, a second time zone,
+  sunrise, sunset, moon phase, weather location, watch/phone battery, Bluetooth.
+- **Weather:** condition icon + temperature (Open‑Meteo).
+- **Calendar:** previous / current / next week, today accented on colour
   watches.
 - Vibration (hourly, on disconnect / reconnect), Do‑Not‑Disturb, themes and
   full localization — all from the config screen.
 
-## Platforms
+## ⌚ Platforms
 
-- Pebble Time 2 — `emery`, colour, 200×228
-- Pebble 2 Duo / Core 2 Duo — `flint`, black & white, 144×168
-- Classic colour / B&W — `basalt`, `diorite`
+| Platform  | Watch                         | Screen        |
+| --------- | ----------------------------- | ------------- |
+| `emery`   | Pebble Time 2                 | colour 200×228 |
+| `flint`   | Pebble 2 Duo / Core 2 Duo     | B&W 144×168    |
+| `basalt`  | Pebble Time / Time Steel      | colour 144×168 |
+| `diorite` | Pebble 2                      | B&W 144×168    |
 
-Round platforms (`chalk` / `gabbro`) are not targeted — the layout is
+Round platforms (`chalk` / `gabbro`) aren't targeted — the layout is
 rectangle‑centric. `aplite` (original 2013 Pebble, 24 KB RAM) is currently
 dropped; see [`TODO.md`](TODO.md).
 
-## Building (Nix + official Pebble CLI)
+## 🔨 Building (Nix + official Pebble CLI)
 
 ```sh
 nix develop                      # pebble CLI + ARM toolchain + emulator
@@ -54,17 +80,23 @@ pebble build                     # -> build/TimelyNG.pbw
 pebble install --emulator emery  # colour emulator (or basalt / diorite / flint)
 ```
 
-Build/test exactly as the cloud does (catches the `-Werror`/warnings the local
-build relaxes):
+Build/test exactly as the cloud does (catches the `-Werror` / warnings the
+local build relaxes via `pbl_suppress_newer_gcc_warnings`):
 
 ```sh
 nix develop -c sh tools/test.sh  # host unit tests + build + strict per‑platform compile
 ```
 
-## Configuration
+## ⚙️ Configuration
 
-The settings screen is fully offline: no server, no CDN, no external host. On
-`showConfiguration` the watch's PebbleKit JS builds the page from
-`src/js/config.js` (the field spec) via `src/js/configpage.js` and hands it to
-the phone as a `data:text/html` URI; the page returns the chosen values via
-`pebblejs://close#`. Edit `src/js/config.js` to change the options.
+The settings screen is fully offline. On `showConfiguration` the watch's
+PebbleKit JS builds the page from `src/js/config.js` (the field spec) via
+`src/js/configpage.js` and hands it to the phone as a `data:text/html` URI; the
+page returns the chosen values via `pebblejs://close#`. Edit
+`src/js/config.js` to change the options.
+
+## 📦 Publishing
+
+Store listing copy (description, release notes, categories, asset specs) lives
+in [`PUBLISHING.md`](PUBLISHING.md), ready to paste into the
+[Rebble developer portal](https://dev-portal.rebble.io/).
