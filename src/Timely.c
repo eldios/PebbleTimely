@@ -68,7 +68,6 @@ static uint8_t battery_percent = 10;
 static bool battery_charging = false;
 static bool battery_plugged = false;
 static int phone_battery_percent = -1; // -1 = unknown (phone hasn't reported / API unavailable)
-static char connection_text_buf[16];
 AppTimer *battery_sending = NULL;
 AppTimer *timezone_request = NULL;
 AppTimer *weather_request = NULL;
@@ -545,15 +544,16 @@ static void sun_time_text(TextLayer *layer, char *buf, bool want_sunset) {
     float h = want_sunset ? ss : sr;
     int hh = (int)h, mm = (int)((h - hh) * 60 + 0.5f);
     if (mm >= 60) { mm -= 60; hh++; }
-    if (hh >= 24) { hh -= 24; }
-    snprintf(buf, 8, "%d:%02d", hh, mm);
+    hh = ((hh % 24) + 24) % 24; // wrap to 0-23 (also bounds the format width)
+    mm = ((mm % 60) + 60) % 60; // wrap to 0-59
+    snprintf(buf, 16, "%d:%02d", hh, mm);
     text_layer_set_text(layer, buf);
   } else {
     text_layer_set_text(layer, "--:--"); // no location yet
   }
 }
-void update_sunrise_text(TextLayer *l) { static char b[8]; sun_time_text(l, b, false); }
-void update_sunset_text(TextLayer *l)  { static char b[8]; sun_time_text(l, b, true); }
+void update_sunrise_text(TextLayer *l) { static char b[16]; sun_time_text(l, b, false); }
+void update_sunset_text(TextLayer *l)  { static char b[16]; sun_time_text(l, b, true); }
 #else
 void update_sunrise_text(TextLayer *l) { text_layer_set_text(l, "--:--"); }
 void update_sunset_text(TextLayer *l)  { text_layer_set_text(l, "--:--"); }
@@ -576,7 +576,7 @@ void update_moon_text(TextLayer *which_layer) {
 
 // Second time zone: local time shifted to clock2_tz (UTC offset, whole hours).
 void update_clock2_text(TextLayer *which_layer) {
-  static char buf[8];
+  static char buf[16];
   if (!currentTime || timezone_offset == TIMEZONE_UNINITIALIZED) {
     text_layer_set_text(which_layer, "--:--");
     return;
@@ -591,13 +591,13 @@ void update_clock2_text(TextLayer *which_layer) {
 // System-info slots: the connection and the two batteries can be shown in any
 // complication slot, so they share the same TextLayer renderer as the rest.
 void update_wbatt_text(TextLayer *which_layer) {
-  static char buf[8];
+  static char buf[16];
   snprintf(buf, sizeof(buf), "%d%%", battery_percent);
   text_layer_set_text(which_layer, buf);
 }
 
 void update_pbatt_text(TextLayer *which_layer) {
-  static char buf[8];
+  static char buf[16];
   if (phone_battery_percent >= 0) {
     snprintf(buf, sizeof(buf), "%d%%", phone_battery_percent);
   } else {
@@ -797,12 +797,13 @@ void position_day_layer() {
 // where it won't collide with the weather to its left. Returns a non-const
 // FONT_KEY string literal so it can pass to set_layer_attr_sfont(char*).
 char *time_font_key(void) {
-  int h = REL_CLOCK_TIME_HEIGHT;
-  if (DEVICE_WIDTH >= 180 && h >= 60) { return FONT_KEY_ROBOTO_BOLD_SUBSET_49; }
-  if (h >= 52) { return FONT_KEY_LECO_42_NUMBERS; }
-  if (h >= 44) { return FONT_KEY_LECO_38_BOLD_NUMBERS; }
-  if (h >= 36) { return FONT_KEY_LECO_32_BOLD_NUMBERS; }
-  return FONT_KEY_LECO_28_LIGHT_NUMBERS;
+  switch (clock_font_for(DEVICE_WIDTH, REL_CLOCK_TIME_HEIGHT)) {
+  case CLOCK_FONT_ROBOTO_49: return FONT_KEY_ROBOTO_BOLD_SUBSET_49;
+  case CLOCK_FONT_LECO_42:   return FONT_KEY_LECO_42_NUMBERS;
+  case CLOCK_FONT_LECO_38:   return FONT_KEY_LECO_38_BOLD_NUMBERS;
+  case CLOCK_FONT_LECO_32:   return FONT_KEY_LECO_32_BOLD_NUMBERS;
+  default:                   return FONT_KEY_LECO_28_LIGHT_NUMBERS;
+  }
 }
 
 void position_time_layer() {
@@ -1289,7 +1290,7 @@ static void window_load(Window *window) {
   // Narrow screens use a slightly smaller weather glyph so it balances the
   // compact clock/temperature; wide screens (emery) keep the larger one.
   climacons  = fonts_load_custom_font(resource_get_handle(
-    (DEVICE_WIDTH >= 180) ? RESOURCE_ID_FONT_CLIMACONS_32 : RESOURCE_ID_FONT_CLIMACONS_28));
+    (DEVICE_WIDTH >= 180) ? RESOURCE_ID_FONT_CLIMACONS_40 : RESOURCE_ID_FONT_CLIMACONS_28));
   weather_set_compact(DEVICE_WIDTH < 180);
   cal_normal = unifont_16;
   cal_bold   = unifont_16_bold;

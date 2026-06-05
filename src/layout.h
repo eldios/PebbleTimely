@@ -25,6 +25,18 @@ typedef struct {
 TimelyLayout layout_compute_rows(int width, int height, int has_top, int has_center, int has_bottom);
 TimelyLayout layout_compute(int width, int height); // all rows present (default)
 
+// Clock font choice as a pure, testable decision (the view maps it to a Pebble
+// FONT_KEY). Scales with the time-band height; the big proportional Roboto is
+// only for wide screens where it won't collide with the weather column.
+typedef enum {
+  CLOCK_FONT_ROBOTO_49 = 0, // wide screens, tall band
+  CLOCK_FONT_LECO_42,
+  CLOCK_FONT_LECO_38,
+  CLOCK_FONT_LECO_32,
+  CLOCK_FONT_LECO_28,       // smallest (very short band)
+} ClockFont;
+ClockFont clock_font_for(int width, int band_h);
+
 // The most recently computed layout (set by the view at window_load); read by
 // components that render proportionally (calendar, etc.).
 void layout_store(TimelyLayout l);

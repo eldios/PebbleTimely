@@ -89,6 +89,11 @@
         },
         {
           "type": "font",
+          "name": "FONT_CLIMACONS_40",
+          "file": "fonts/Climacons.ttf"
+        },
+        {
+          "type": "font",
           "name": "FONT_CLIMACONS_32",
           "file": "fonts/Climacons.ttf"
         },

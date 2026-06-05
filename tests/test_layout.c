@@ -40,3 +40,25 @@ UTEST(layout, no_statusbar_reclaims_band) {
   ASSERT_EQ(0, L.statusbar.h);
   ASSERT_EQ(0, L.slot_top.y); // slot_top starts at the very top now
 }
+
+// CENTER/BOTTOM bands collapse to zero exactly when their row is off, and the
+// three slot_top bands sum to slot_top.h.
+UTEST(layout, bands_collapse_and_sum) {
+  TimelyLayout a = layout_compute_rows(144, 168, 1, 1, 0); // no bottom
+  ASSERT_EQ(a.slot_top.h, a.subtext_top);                  // zero-height bottom sits at the end
+  TimelyLayout b = layout_compute_rows(144, 168, 1, 0, 1); // no center
+  ASSERT_EQ(0, b.clock_date.h);                            // center band gone
+  ASSERT_EQ(0, b.clock_time.y);                            // time band starts at top of slot_top
+  // time band + bottom band fit inside slot_top
+  ASSERT_TRUE(b.clock_time.y + b.clock_time.h <= b.slot_top.h);
+}
+
+// Pure clock-font selection: scales with band height; Roboto only on wide+tall.
+UTEST(clockfont, scales_with_band_and_width) {
+  ASSERT_EQ(CLOCK_FONT_ROBOTO_49, clock_font_for(200, 65)); // emery, tall band
+  ASSERT_EQ(CLOCK_FONT_LECO_42,   clock_font_for(200, 55)); // wide but shorter -> LECO
+  ASSERT_EQ(CLOCK_FONT_LECO_42,   clock_font_for(144, 70)); // narrow never gets Roboto
+  ASSERT_EQ(CLOCK_FONT_LECO_38,   clock_font_for(144, 49)); // 144 default band
+  ASSERT_EQ(CLOCK_FONT_LECO_32,   clock_font_for(144, 40));
+  ASSERT_EQ(CLOCK_FONT_LECO_28,   clock_font_for(144, 30)); // very short
+}

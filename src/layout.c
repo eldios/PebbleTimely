@@ -58,6 +58,14 @@ TimelyLayout layout_compute(int width, int height) {
   return layout_compute_rows(width, height, 1, 1, 1);
 }
 
+ClockFont clock_font_for(int width, int band_h) {
+  if (width >= 180 && band_h >= 60) { return CLOCK_FONT_ROBOTO_49; }
+  if (band_h >= 52) { return CLOCK_FONT_LECO_42; }
+  if (band_h >= 44) { return CLOCK_FONT_LECO_38; }
+  if (band_h >= 36) { return CLOCK_FONT_LECO_32; }
+  return CLOCK_FONT_LECO_28;
+}
+
 static TimelyLayout s_current;
 void layout_store(TimelyLayout l) { s_current = l; }
 TimelyLayout layout_get(void) { return s_current; }

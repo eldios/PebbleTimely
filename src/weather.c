@@ -31,19 +31,19 @@ static void weather_render(Layer *me, GContext *ctx) {
   cond_current[1] = '\0';
 
   setColors(ctx);
-  // The layer IS the time band. Top-align the icon-over-temperature block so it
-  // sits level with the clock (which is also top-aligned) and never spills past
-  // the band into the calendar below.
-  GFont temp_font = fonts_get_system_font(s_compact ? FONT_KEY_GOTHIC_18 : FONT_KEY_GOTHIC_24);
-  // gap = where the temperature sits below the icon's top; the climacons glyph
-  // renders well inside its box, so pull the temperature up tight against it.
-  int gap    = s_compact ? 18 : 21;
-  int temp_h = s_compact ? 18 : 22;
+  // The layer IS the time band. The icon-over-temperature block is centred in
+  // the band so it lines up with the clock and fills the column (big glyph on
+  // wide screens), without spilling into the calendar below.
+  GFont temp_font = fonts_get_system_font(s_compact ? FONT_KEY_GOTHIC_18 : FONT_KEY_GOTHIC_28);
+  int icon_w = s_compact ? 34 : 42;    // climacons box (28px glyph / 40px glyph)
+  int gap    = s_compact ? 18 : 32;    // temperature baseline below the icon top
+  int temp_h = s_compact ? 18 : 28;
   int band_h = layer_get_bounds(me).size.h;
-  int top = 2;
-  if (top + gap + temp_h > band_h) { top = band_h - gap - temp_h; if (top < 0) { top = 0; } }
-  graphics_draw_text(ctx, cond_current, climacons, GRect(2, top, 34, 36), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
-  graphics_draw_text(ctx, temp_current, temp_font, GRect(2, top + gap, 36, temp_h + 8), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  int block  = gap + temp_h;           // total visual height of icon+temp
+  int top = (band_h - block) / 2;
+  if (top < 0) { top = 0; }
+  graphics_draw_text(ctx, cond_current, climacons, GRect(2, top, icon_w, gap + 8), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
+  graphics_draw_text(ctx, temp_current, temp_font, GRect(2, top + gap, icon_w + 2, temp_h + 8), GTextOverflowModeWordWrap, GTextAlignmentCenter, NULL);
   if (debug_get()->general) { app_log(APP_LOG_LEVEL_DEBUG, __FILE__, __LINE__, "Weather redrawing: %d, %s", weather_state()->current, weather_state()->condition); }
 }
 
