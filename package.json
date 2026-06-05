@@ -1,7 +1,7 @@
 {
   "name": "TimelyNG",
   "author": "Emanuele 'Lele' Calo",
-  "version": "3.0.0",
+  "version": "0.0.1",
   "private": true,
   "keywords": [
     "pebble-app"
@@ -34,16 +34,6 @@
           "type": "png",
           "name": "IMAGE_MENU_ICON_DARK",
           "file": "images/menu_icon_timely_dark.png"
-        },
-        {
-          "type": "png",
-          "name": "IMAGE_BT_NOLINK_ICON",
-          "file": "images/bluetooth_20_20.png"
-        },
-        {
-          "type": "png",
-          "name": "IMAGE_BT_LINKED_ICON",
-          "file": "images/bluetooth_thick_20_20.png"
         },
         {
           "type": "png",

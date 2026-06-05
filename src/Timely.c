@@ -45,9 +45,6 @@ GFont cal_normal;
 GFont cal_bold;
 GFont climacons;
 
-static BitmapLayer *bmp_connection_layer;
-static GBitmap *image_connection_icon;
-static GBitmap *image_noconnection_icon;
 static BitmapLayer *bmp_charging_layer;
 static GBitmap *image_charging_icon;
 static GBitmap *image_hourvibe_icon;
@@ -671,10 +668,6 @@ void update_slot_text(TextLayer *layer, uint8_t content) {
   }
 }
 
-void process_show_week() { update_slot_text(week_layer, settings_get()->show_week); }   // LEFT
-void process_show_day()  { update_slot_text(day_layer,  settings_get()->show_day); }    // MIDDLE
-void process_show_ampm() { update_slot_text(ampm_layer, settings_get()->show_am_pm); }  // RIGHT
-
 // Lay out a two-slot complication row at (top,h): both set -> halves; one set ->
 // full-width centered in the left layer; none -> both hidden.
 static void layout_two_slots(TextLayer *l, TextLayer *r, uint8_t cl, uint8_t cr, int top, int h) {
@@ -1273,15 +1266,12 @@ static void apply_palette(void) {
   text_layer_set_text_color(text_connection_layer, fg);
   text_layer_set_text_color(text_battery_layer, fg);
 #ifdef PBL_COLOR
-  tint_icon(image_connection_icon, fg);
-  tint_icon(image_noconnection_icon, fg);
   tint_icon(image_charging_icon, fg);
   tint_icon(image_hourvibe_icon, fg);
   tint_icon(image_dnd_icon, fg);
   tint_icon(image_phone_icon, fg);
   tint_icon(image_watch_icon, fg);
   tint_icon(image_bt16_icon, fg);
-  if (bmp_connection_layer) { layer_mark_dirty(bitmap_layer_get_layer(bmp_connection_layer)); }
   if (bmp_charging_layer)   { layer_mark_dirty(bitmap_layer_get_layer(bmp_charging_layer)); }
   if (bmp_phone_layer)      { layer_mark_dirty(bitmap_layer_get_layer(bmp_phone_layer)); }
   if (bmp_watch_layer)      { layer_mark_dirty(bitmap_layer_get_layer(bmp_watch_layer)); }
@@ -1404,12 +1394,6 @@ static void window_load(Window *window) {
   layer_add_child(window_layer, slot_bot);
   GRect slot_bot_bounds = layer_get_bounds(slot_bot);
 
-  bmp_connection_layer = bitmap_layer_create( GRect(STAT_BT_ICON_LEFT, STAT_BT_ICON_TOP, 20, 20) );
-  bitmap_layer_set_compositing_mode(bmp_connection_layer, GCompOpSet);
-  layer_add_child(statusbar, bitmap_layer_get_layer(bmp_connection_layer));
-  image_connection_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BT_LINKED_ICON);
-  image_noconnection_icon = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BT_NOLINK_ICON);
-
   bmp_charging_layer = bitmap_layer_create( GRect(STAT_CHRG_ICON_LEFT, STAT_CHRG_ICON_TOP, 20, 20) );
   bitmap_layer_set_compositing_mode(bmp_charging_layer, GCompOpSet);
   layer_add_child(statusbar, bitmap_layer_get_layer(bmp_charging_layer));
@@ -1429,9 +1413,6 @@ static void window_load(Window *window) {
   bmp_watch_layer = bitmap_layer_create( GRect(DEVICE_WIDTH - 18, 4, 16, 16) ); // right slot icon
   bitmap_layer_set_compositing_mode(bmp_watch_layer, GCompOpSet);
   layer_add_child(statusbar, bitmap_layer_get_layer(bmp_watch_layer));
-
-  // The old fixed BT icon is retired (Bluetooth is now a slot option).
-  layer_set_hidden(bitmap_layer_get_layer(bmp_connection_layer), true);
 
   dnd_period_check();
   hourvibe_period_check();
@@ -1556,11 +1537,7 @@ static void window_unload(Window *window) {
   layer_destroy(battery_layer);
   // custom fonts are automatically unloaded at exit - http://forums.getpebble.com/discussion/comment/35808/#Comment_35808
   layer_remove_from_parent(bitmap_layer_get_layer(bmp_charging_layer));
-  layer_remove_from_parent(bitmap_layer_get_layer(bmp_connection_layer));
   bitmap_layer_destroy(bmp_charging_layer);
-  bitmap_layer_destroy(bmp_connection_layer);
-  gbitmap_destroy(image_connection_icon);
-  gbitmap_destroy(image_noconnection_icon);
   gbitmap_destroy(image_charging_icon);
   gbitmap_destroy(image_hourvibe_icon);
   gbitmap_destroy(image_dnd_icon);
