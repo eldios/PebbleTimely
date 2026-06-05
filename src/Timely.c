@@ -857,17 +857,26 @@ void toggle_statusbar() {
     layer_add_child(datetime_layer, text_layer_get_layer(date_layer));
     // icon(s)
     layer_add_child(statusbar, bitmap_layer_get_layer(bmp_charging_layer));
-    //layer_set_frame( bitmap_layer_get_layer(bmp_charging_layer), GRect(STAT_CHRG_ICON_LEFT, STAT_CHRG_ICON_TOP, 20, 20) );
     layer_add_child(statusbar, battery_layer);
     layer_add_child(statusbar, effect_layer_get_layer(battery_meter_layer));
+    // Keep the slot value text above battery_layer (which draws the bar-style
+    // outline) so re-parenting here doesn't bury the percentage under the box.
+    if (text_connection_layer) { layer_add_child(statusbar, text_layer_get_layer(text_connection_layer)); }
+    if (text_battery_layer)    { layer_add_child(statusbar, text_layer_get_layer(text_battery_layer)); }
   } else {
     // status
     layer_set_hidden(statusbar, true);
-    // date / center-left moves into the reclaimed status-bar strip
-    layer_add_child(slot_status, text_layer_get_layer(date_layer));
+    // When the bar is only auto-hidden (when-low) the 24px strip is still
+    // reserved, so move the date up to use it; when the bar is fully disabled
+    // (showStatus 0) there is no strip, so keep the date in the center row to
+    // avoid clipping it to a zero-height parent.
+    if (adv_settings_get()->showStatus != 0) {
+      layer_add_child(slot_status, text_layer_get_layer(date_layer));
+    } else {
+      layer_add_child(datetime_layer, text_layer_get_layer(date_layer));
+    }
     // icon(s)
     layer_add_child(datetime_layer, bitmap_layer_get_layer(bmp_charging_layer));
-    //layer_set_frame( bitmap_layer_get_layer(bmp_charging_layer), GRect(124, -2, 20, 20) );
     layer_add_child(datetime_layer, battery_layer);
     layer_add_child(datetime_layer, effect_layer_get_layer(battery_meter_layer));
   }
