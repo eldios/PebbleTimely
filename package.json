@@ -158,6 +158,7 @@
       "slot_stat_r": 115,
       "slot_ctr_l": 116,
       "slot_ctr_r": 117,
+      "batt_style": 118,
       "trans_abbr_sunday": 500,
       "trans_abbr_monday": 501,
       "trans_abbr_tuesday": 502,

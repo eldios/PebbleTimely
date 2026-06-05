@@ -15,6 +15,7 @@ static persist s_settings = {
   .slot_stat_r = 15, // status bar right: watch battery
   .slot_ctr_l  = 18, // center row left: Date (preserves prior look)
   .slot_ctr_r  = 0,  // center row right: empty
+  .batt_style  = 2,  // battery: icon + text (preserves prior look)
 
   .week_format = 0, // ISO 8601
   .vibe_pat_disconnect = 2, // double vibe

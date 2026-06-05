@@ -153,6 +153,7 @@ static bool showing_statusbar = true;
 #define AK_SLOT_STAT_R         115
 #define AK_SLOT_CTR_L          116
 #define AK_SLOT_CTR_R          117
+#define AK_BATT_STYLE          118
 
 #define AK_TRANS_ABBR_SUNDAY    500
 #define AK_TRANS_ABBR_MONDAY    501
@@ -718,29 +719,46 @@ static GBitmap *stat_slot_icon(uint8_t content) {
   }
 }
 
-// Render one status-bar slot: icon (if any) on the outer edge, value beside it.
-// Left slot is left-aligned with the icon at the far left; right slot is
-// right-aligned with the icon at the far right.
+static bool is_battery_content(uint8_t c) { return c == 15 || c == 16; }
+
+// Render one status-bar slot. Battery content honours batt_style: bar (outline
+// drawn by battery_layer with the % centred inside), text-only, or icon+text.
+// Other content shows its icon (if any) on the outer edge with the value beside.
 static void apply_stat_slot(TextLayer *txt, BitmapLayer *icon, uint8_t content, bool is_right) {
   int half = DEVICE_WIDTH / 2;
-  GBitmap *bmp = stat_slot_icon(content);
   Layer *il = bitmap_layer_get_layer(icon);
-  if (bmp) {
+  Layer *tl = text_layer_get_layer(txt);
+  uint8_t bstyle = settings_get()->batt_style;
+
+  if (is_battery_content(content) && bstyle == 0) {        // BAR: % centred in the box
+    layer_set_hidden(il, true);
+    text_layer_set_text_alignment(txt, GTextAlignmentCenter);
+    layer_set_frame(tl, is_right ? GRect(half + 2, 2, half - 10, 20) : GRect(2, 2, half - 8, 20));
+    update_slot_text(txt, content);
+    return;
+  }
+
+  GBitmap *bmp = (is_battery_content(content) && bstyle == 1) ? NULL : stat_slot_icon(content);
+  if (bmp) {                                               // ICON + value
     bitmap_layer_set_bitmap(icon, bmp);
     layer_set_hidden(il, false);
     if (is_right) {
       layer_set_frame(il, GRect(DEVICE_WIDTH - 18, 4, 16, 16));
-      layer_set_frame(text_layer_get_layer(txt), GRect(half, 2, DEVICE_WIDTH - 20 - half, 22));
+      text_layer_set_text_alignment(txt, GTextAlignmentRight);
+      layer_set_frame(tl, GRect(half, 2, DEVICE_WIDTH - 20 - half, 22));
     } else {
       layer_set_frame(il, GRect(2, 4, 16, 16));
-      layer_set_frame(text_layer_get_layer(txt), GRect(20, 2, half - 22, 22));
+      text_layer_set_text_alignment(txt, GTextAlignmentLeft);
+      layer_set_frame(tl, GRect(20, 2, half - 22, 22));
     }
-  } else {
+  } else {                                                 // TEXT only
     layer_set_hidden(il, true);
     if (is_right) {
-      layer_set_frame(text_layer_get_layer(txt), GRect(half, 2, DEVICE_WIDTH - 2 - half, 22));
+      text_layer_set_text_alignment(txt, GTextAlignmentRight);
+      layer_set_frame(tl, GRect(half, 2, DEVICE_WIDTH - 2 - half, 22));
     } else {
-      layer_set_frame(text_layer_get_layer(txt), GRect(2, 2, half - 4, 22));
+      text_layer_set_text_alignment(txt, GTextAlignmentLeft);
+      layer_set_frame(tl, GRect(2, 2, half - 4, 22));
     }
   }
   update_slot_text(txt, content);
@@ -752,6 +770,13 @@ void refresh_stat_slots(void) {
   if (!text_connection_layer || !text_battery_layer) { return; } // not built yet
   apply_stat_slot(text_connection_layer, bmp_phone_layer, settings_get()->slot_stat_l, false);
   apply_stat_slot(text_battery_layer,    bmp_watch_layer, settings_get()->slot_stat_r, true);
+  // The bar style needs the battery_layer (which draws the outlines) visible.
+  if (battery_layer) {
+    bool bars = settings_get()->batt_style == 0 &&
+      (is_battery_content(settings_get()->slot_stat_l) || is_battery_content(settings_get()->slot_stat_r));
+    layer_set_hidden(battery_layer, !bars);
+    if (bars) { layer_mark_dirty(battery_layer); }
+  }
 }
 
 void position_connection_layer() {
@@ -878,17 +903,28 @@ void slot_bot_layer_update_callback(Layer *me, GContext* ctx) {
 // TODO: configurable: draw appropriate slot
 }
 
+// Draw a battery outline + nib for the "bar with %" style; the percentage text
+// is the slot's own TextLayer, centred inside this box.
+static void draw_batt_box(GContext *ctx, int x, int w, bool low) {
+  graphics_context_set_stroke_color(ctx, low ? theme_palette().warn : theme_palette().fg);
+  graphics_draw_rect(ctx, GRect(x, 4, w, 16));
+  graphics_draw_rect(ctx, GRect(x + w, 4 + 5, 2, 6)); // nib
+}
+
 void battery_layer_update_callback(Layer *me, GContext* ctx) {
-// simply draw the battery outline here - the text is a different layer, and we then 'fill' it with an inverterLayer
+  (void)me;
+  if (settings_get()->batt_style != 0) { return; } // only the bar style draws a box
   setColors(ctx);
-  if (battery_percent <= 20) { graphics_context_set_stroke_color(ctx, theme_palette().warn); } // low: warn color
-// battery outline
-  graphics_draw_rect(ctx, GRect(STAT_BATT_LEFT, STAT_BATT_TOP, STAT_BATT_WIDTH, STAT_BATT_HEIGHT));
-// battery 'nib' terminal
-  graphics_draw_rect(ctx, GRect(STAT_BATT_LEFT + STAT_BATT_WIDTH - 1,
-                                STAT_BATT_TOP + (STAT_BATT_HEIGHT - STAT_BATT_NIB_HEIGHT)/2,
-                                STAT_BATT_NIB_WIDTH,
-                                STAT_BATT_NIB_HEIGHT));
+  int half = DEVICE_WIDTH / 2;
+  uint8_t cl = settings_get()->slot_stat_l, cr = settings_get()->slot_stat_r;
+  if (is_battery_content(cl)) {
+    int pct = (cl == 15) ? battery_percent : phone_battery_percent;
+    draw_batt_box(ctx, 2, half - 10, pct >= 0 && pct <= 20);
+  }
+  if (is_battery_content(cr)) {
+    int pct = (cr == 15) ? battery_percent : phone_battery_percent;
+    draw_batt_box(ctx, half + 2, half - 12, pct >= 0 && pct <= 20);
+  }
 }
 
 static void request_weather(void *data) {
@@ -1710,6 +1746,9 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
     Tuple *slot_ctr_r = dict_find(received, AK_SLOT_CTR_R);
     if (slot_ctr_r != NULL) { settings_get()->slot_ctr_r = slot_ctr_r->value->uint8; }
     if (slot_ctr_l != NULL || slot_ctr_r != NULL) { apply_center(); }
+
+    Tuple *batt_style = dict_find(received, AK_BATT_STYLE);
+    if (batt_style != NULL) { settings_get()->batt_style = batt_style->value->uint8; refresh_stat_slots(); }
 
     if (need_second_tick_handler() != seconds_shown) {
       switch_tick_handler();
