@@ -794,8 +794,9 @@ void position_day_layer() {
 }
 
 // Clock font scales to the time band height; Roboto (wide) only on wide screens
-// where it won't collide with the weather to its left.
-const char *time_font_key(void) {
+// where it won't collide with the weather to its left. Returns a non-const
+// FONT_KEY string literal so it can pass to set_layer_attr_sfont(char*).
+char *time_font_key(void) {
   int h = REL_CLOCK_TIME_HEIGHT;
   if (DEVICE_WIDTH >= 180 && h >= 60) { return FONT_KEY_ROBOTO_BOLD_SUBSET_49; }
   if (h >= 52) { return FONT_KEY_LECO_42_NUMBERS; }
