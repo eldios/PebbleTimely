@@ -9,6 +9,8 @@ var VIBES = [
 
 // Complication menu shared by the two slots above the calendar.
 // Values must match update_slot_text() in Timely.c.
+// [label, value]; value must match update_slot_text() in Timely.c. Displayed
+// alphabetically (— pinned first), so new entries can be appended in any order.
 var SLOTS = [
   ['—', 0], ['Day', 1], ['Month', 2], ['Week', 3], ['Timezone', 4], ['AM/PM', 5],
   ['Day of year', 6], ['Days left in year', 7], ['Day of year / left', 8],
@@ -16,6 +18,9 @@ var SLOTS = [
   ['2nd time zone', 14],
   ['Watch battery', 15], ['Phone battery', 16], ['Bluetooth', 17], ['Date', 18]
 ];
+SLOTS = [SLOTS[0]].concat(SLOTS.slice(1).sort(function (a, b) {
+  return a[0] < b[0] ? -1 : (a[0] > b[0] ? 1 : 0);
+}));
 
 // UTC offsets for the second time zone (whole hours).
 var TZ_OFFSETS = (function () {
@@ -84,7 +89,7 @@ module.exports = [
     ]
   },
   {
-    title: 'Clock',
+    title: 'Clocks & Date',
     fields: [
       { key: 'intl_fmt_date', label: 'Date format', type: 'select', def: 0, options: DATE_FORMATS },
       { key: 'strftime_format', label: 'Custom format', type: 'text', def: '%Y-%m-%d', max: 31,
@@ -103,7 +108,7 @@ module.exports = [
       { key: 'style_week', label: 'Above calendar — left', type: 'select', def: 0, options: SLOTS },
       { key: 'style_am_pm', label: 'Above calendar — right', type: 'select', def: 0, options: SLOTS },
       { key: 'batt_style', label: 'Battery style', type: 'select', def: 2,
-        options: [['Bar (fills) with %', 0], ['Text %', 1], ['Icon + %', 2]],
+        options: [['Bar (fills) with %', 0], ['Text %', 1], ['Icon + %', 2], ['Bar + icon', 3]],
         note: 'How the Watch/Phone battery complications are drawn.' },
       { key: 'intl_fmt_week', label: 'Week numbering', type: 'select', def: 0,
         options: [['ISO 8601', 0], ['Sun 1st of W1', 1], ['Mon 1st of W1', 2]],

@@ -721,6 +721,20 @@ static GBitmap *stat_slot_icon(uint8_t content) {
 }
 
 static bool is_battery_content(uint8_t c) { return c == 15 || c == 16; }
+static bool batt_style_is_bar(uint8_t s) { return s == 0 || s == 3; } // 0 bar, 3 bar+icon
+
+// Battery-bar box geometry for one side. with_icon (bar+icon style) reserves a
+// leading 18px for the glyph on the outer edge and narrows the box.
+static void batt_box_geom(bool is_right, bool with_icon, int *bx, int *bw) {
+  int half = DEVICE_WIDTH / 2;
+  if (is_right) {
+    *bx = half + 2;
+    *bw = with_icon ? half - 22 : half - 12;
+  } else {
+    *bx = with_icon ? 20 : 2;
+    *bw = with_icon ? half - 28 : half - 10;
+  }
+}
 
 // Render one status-bar slot. Battery content honours batt_style: bar (outline
 // drawn by battery_layer with the % centred inside), text-only, or icon+text.
@@ -731,10 +745,18 @@ static void apply_stat_slot(TextLayer *txt, BitmapLayer *icon, uint8_t content, 
   Layer *tl = text_layer_get_layer(txt);
   uint8_t bstyle = settings_get()->batt_style;
 
-  if (is_battery_content(content) && bstyle == 0) {        // BAR: % centred in the box
-    layer_set_hidden(il, true);
+  if (is_battery_content(content) && batt_style_is_bar(bstyle)) { // BAR (+ optional icon)
+    bool with_icon = (bstyle == 3);
+    int bx, bw; batt_box_geom(is_right, with_icon, &bx, &bw);
+    if (with_icon) {
+      bitmap_layer_set_bitmap(icon, stat_slot_icon(content));
+      layer_set_hidden(il, false);
+      layer_set_frame(il, GRect(is_right ? DEVICE_WIDTH - 18 : 2, 4, 16, 16));
+    } else {
+      layer_set_hidden(il, true);
+    }
     text_layer_set_text_alignment(txt, GTextAlignmentCenter);
-    layer_set_frame(tl, is_right ? GRect(half + 2, 2, half - 10, 20) : GRect(2, 2, half - 8, 20));
+    layer_set_frame(tl, GRect(bx, 2, bw, 20)); // % centred in the box
     update_slot_text(txt, content);
     return;
   }
@@ -796,9 +818,11 @@ static void set_batt_fill(EffectLayer *fl, int box_x, int box_w, int pct, bool s
   Layer *l = effect_layer_get_layer(fl);
   if (!show || pct < 0) { layer_set_hidden(l, true); return; }
   if (pct > 100) { pct = 100; }
-  int fillw = (box_w - 4) * pct / 100;
+  int fillw = (box_w - 2) * pct / 100;
   if (fillw < 1 && pct > 0) { fillw = 1; }
-  layer_set_frame(l, GRect(box_x + 2, 6, fillw, 10));
+  // Full interior height (box is y4..20) so the fill has no empty top/bottom
+  // strip and covers the whole % text, keeping it readable when inverted.
+  layer_set_frame(l, GRect(box_x + 1, 5, fillw, 14));
   layer_set_hidden(l, false);
   layer_add_child(statusbar, l); // raise to top so it inverts the box + % text
 }
@@ -808,7 +832,8 @@ static void set_batt_fill(EffectLayer *fl, int box_x, int box_w, int pct, bool s
 void refresh_stat_slots(void) {
   if (!text_connection_layer || !text_battery_layer) { return; } // not built yet
   uint8_t cl = settings_get()->slot_stat_l, cr = settings_get()->slot_stat_r;
-  bool bar = settings_get()->batt_style == 0;
+  bool bar = batt_style_is_bar(settings_get()->batt_style);
+  bool with_icon = settings_get()->batt_style == 3;
   // One slot set (and not the side-drawn bar style) -> centre it; else two halves.
   bool single = (cl && !cr) || (!cl && cr);
   if (single && !bar) {
@@ -821,15 +846,17 @@ void refresh_stat_slots(void) {
   }
 
   bool bars = bar && (is_battery_content(cl) || is_battery_content(cr));
-  int half = DEVICE_WIDTH / 2;
   if (battery_layer) { // battery_layer draws the bar outlines
     layer_set_hidden(battery_layer, !bars);
     if (bars) { layer_mark_dirty(battery_layer); }
   }
-  set_batt_fill(battery_meter_layer, 2, half - 10,
+  int lx, lw, rx, rw;
+  batt_box_geom(false, with_icon, &lx, &lw);
+  batt_box_geom(true,  with_icon, &rx, &rw);
+  set_batt_fill(battery_meter_layer, lx, lw,
     is_battery_content(cl) ? (cl == 15 ? battery_percent : phone_battery_percent) : -1,
     bar && is_battery_content(cl));
-  set_batt_fill(batt_fill_r, half + 2, half - 12,
+  set_batt_fill(batt_fill_r, rx, rw,
     is_battery_content(cr) ? (cr == 15 ? battery_percent : phone_battery_percent) : -1,
     bar && is_battery_content(cr));
 }
@@ -978,17 +1005,20 @@ static void draw_batt_box(GContext *ctx, int x, int w, bool low) {
 
 void battery_layer_update_callback(Layer *me, GContext* ctx) {
   (void)me;
-  if (settings_get()->batt_style != 0) { return; } // only the bar style draws a box
+  if (!batt_style_is_bar(settings_get()->batt_style)) { return; } // only bar styles draw a box
   setColors(ctx);
-  int half = DEVICE_WIDTH / 2;
+  bool with_icon = settings_get()->batt_style == 3;
   uint8_t cl = settings_get()->slot_stat_l, cr = settings_get()->slot_stat_r;
+  int bx, bw;
   if (is_battery_content(cl)) {
     int pct = (cl == 15) ? battery_percent : phone_battery_percent;
-    draw_batt_box(ctx, 2, half - 10, pct >= 0 && pct <= 20);
+    batt_box_geom(false, with_icon, &bx, &bw);
+    draw_batt_box(ctx, bx, bw, pct >= 0 && pct <= 20);
   }
   if (is_battery_content(cr)) {
     int pct = (cr == 15) ? battery_percent : phone_battery_percent;
-    draw_batt_box(ctx, half + 2, half - 12, pct >= 0 && pct <= 20);
+    batt_box_geom(true, with_icon, &bx, &bw);
+    draw_batt_box(ctx, bx, bw, pct >= 0 && pct <= 20);
   }
 }
 
