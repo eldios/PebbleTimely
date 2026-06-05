@@ -136,16 +136,14 @@ module.exports = [
       { key: 'show_stat_bar', label: 'Show status bar', type: 'select', def: 1,
         options: [['Never', 0], ['Always', 1], ['When battery low', 2]] },
       { key: 'show_stat_batt', label: 'Low battery threshold (%)', type: 'number', def: 20,
-        min: 0, max: 100, note: 'Used when "When battery low" is selected.' },
-      { key: 'slot_stat_l', label: 'Slot left', type: 'select', def: 16, options: SLOTS },
-      { key: 'slot_stat_r', label: 'Slot right', type: 'select', def: 15, options: SLOTS }
+        min: 0, max: 100, note: 'Used when "When battery low" is selected.' }
     ]
   },
   {
     title: 'Vibration',
     open: false,
     fields: [
-      { type: 'vibe-sched' },
+      { type: 'vibe-sched', patterns: VIBES },
       { key: 'vibe_pat_disconnect', label: 'On disconnect', type: 'select', def: 2, options: VIBES },
       { key: 'vibe_pat_connect', label: 'On reconnect', type: 'select', def: 0, options: VIBES }
     ]

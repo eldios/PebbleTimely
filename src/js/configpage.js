@@ -74,9 +74,14 @@ function renderField(f, current) {
     // mode comes from vibe_days; fall back to deriving it from older saves.
     var vmode = (current && current.vibe_days != null) ? Number(current.vibe_days)
       : (Number((current && current.vibe_hour) || 0) === 0 ? 0 : (vs === ve ? 1 : 2));
-    return renderSched('vibe', 'Hourly vibration',
+    var vpat = Number((current && current.vibe_hour) || 0);
+    if (vpat <= 1) { vpat = 2; } // 0/1 came from the old on-off encoding; default to 2x
+    var h = renderSched('vibe', 'Hourly vibration',
       [['Off', 0], ['Always On', 1], ['Time Period', 2], ['Follow Do Not Disturb', 3]], vmode, vs, ve,
       'Time Period: From and To must differ. Follow DND: vibrates hourly except during Do Not Disturb.');
+    h += '<label class="row"><span>Vibration pattern</span><select id="vibePat">' +
+      selOptions(f.patterns || [['1x', 1]], vpat) + '</select></label>';
+    return h;
   }
   if (f.type === 'dnd-sched') {
     var dm = Number((current && current.dnd_noaccel) || 0);
@@ -217,7 +222,8 @@ function buildConfigPage(spec, current) {
     'var allk=document.querySelectorAll("[data-key]");for(var z=0;z<allk.length;z++){allk[z].addEventListener("change",syncCond);}' +
     'syncCond();' +
     // Derive the watch keys from the scheduled controls; return false to abort.
-    'function augment(o){var v=byId("vibeMode");if(v){var m=+v.value;o.vibe_days=m;o.vibe_hour=(m===0?0:1);' +
+    'function augment(o){var v=byId("vibeMode");if(v){var m=+v.value;o.vibe_days=m;' +
+    'var vp=byId("vibePat");o.vibe_hour=(m===0?0:(vp?+vp.value:1));' +
     'if(m===2){var f=t2i(byId("vibeFrom").value),t=t2i(byId("vibeTo").value);' +
     'if(f===t){alert("Hourly vibration: From and To must differ.");return false;}' +
     'o.vibe_start=f;o.vibe_stop=t;}else{o.vibe_start=0;o.vibe_stop=0;}}' +
