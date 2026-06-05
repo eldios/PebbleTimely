@@ -756,7 +756,7 @@ static void apply_stat_slot(TextLayer *txt, BitmapLayer *icon, uint8_t content, 
       layer_set_hidden(il, true);
     }
     text_layer_set_text_alignment(txt, GTextAlignmentCenter);
-    layer_set_frame(tl, GRect(bx, 2, bw, 20)); // % centred in the box
+    layer_set_frame(tl, GRect(bx, 0, bw, 20)); // % in the box, nudged up (was clipping low)
     update_slot_text(txt, content);
     return;
   }
@@ -997,10 +997,11 @@ void slot_bot_layer_update_callback(Layer *me, GContext* ctx) {
 
 // Draw a battery outline + nib for the "bar with %" style; the percentage text
 // is the slot's own TextLayer, centred inside this box.
-static void draw_batt_box(GContext *ctx, int x, int w, bool low) {
+static void draw_batt_box(GContext *ctx, int x, int w, bool low, bool nib_left) {
   graphics_context_set_stroke_color(ctx, low ? theme_palette().warn : theme_palette().fg);
   graphics_draw_rect(ctx, GRect(x, 4, w, 16));
-  graphics_draw_rect(ctx, GRect(x + w, 4 + 5, 2, 6)); // nib
+  // The left slot's nib faces left (toward its icon) so the two read as one unit.
+  graphics_draw_rect(ctx, GRect(nib_left ? x - 2 : x + w, 4 + 5, 2, 6));
 }
 
 void battery_layer_update_callback(Layer *me, GContext* ctx) {
@@ -1013,12 +1014,12 @@ void battery_layer_update_callback(Layer *me, GContext* ctx) {
   if (is_battery_content(cl)) {
     int pct = (cl == 15) ? battery_percent : phone_battery_percent;
     batt_box_geom(false, with_icon, &bx, &bw);
-    draw_batt_box(ctx, bx, bw, pct >= 0 && pct <= 20);
+    draw_batt_box(ctx, bx, bw, pct >= 0 && pct <= 20, true);  // left: nib toward the icon
   }
   if (is_battery_content(cr)) {
     int pct = (cr == 15) ? battery_percent : phone_battery_percent;
     batt_box_geom(true, with_icon, &bx, &bw);
-    draw_batt_box(ctx, bx, bw, pct >= 0 && pct <= 20);
+    draw_batt_box(ctx, bx, bw, pct >= 0 && pct <= 20, false); // right: nib on the outer edge
   }
 }
 
