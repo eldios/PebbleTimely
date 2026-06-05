@@ -61,16 +61,19 @@ Compared to the classic Timely and its forks, TimelyNG adds:
 
 ## ⌚ Platforms
 
-| Platform  | Watch                         | Screen        |
-| --------- | ----------------------------- | ------------- |
-| `emery`   | Pebble Time 2                 | colour 200×228 |
-| `flint`   | Pebble 2 Duo / Core 2 Duo     | B&W 144×168    |
-| `basalt`  | Pebble Time / Time Steel      | colour 144×168 |
-| `diorite` | Pebble 2                      | B&W 144×168    |
+| Platform  | Watch                      | Screen          | Status |
+| --------- | -------------------------- | --------------- | ------ |
+| `emery`   | Pebble Time 2              | colour 200×228  | ✅ Supported |
+| `flint`   | Pebble 2 Duo / Core 2 Duo  | B&W 144×168     | ✅ Supported |
+| `basalt`  | Pebble Time / Time Steel   | colour 144×168  | ✅ Supported |
+| `diorite` | Pebble 2                   | B&W 144×168     | ✅ Supported |
+| `aplite`  | Pebble (2013) / Steel      | B&W 144×168     | ⏳ Dropped — future (24 KB RAM, needs a code diet) |
+| `chalk`   | Pebble Time Round          | colour 180×180 round | 🔜 Not supported — future (round layout) |
+| `gabbro`  | Core Time 2                | colour 260×260 round | 🔜 Not supported — future (round layout) |
 
-Round platforms (`chalk` / `gabbro`) aren't targeted — the layout is
-rectangle‑centric. `aplite` (original 2013 Pebble, 24 KB RAM) is currently
-dropped; see [`TODO.md`](TODO.md).
+The round platforms (`chalk` / `gabbro`) need a dedicated round layout — the
+current design is rectangle‑centric. `aplite` was dropped for RAM. See
+[`TODO.md`](TODO.md).
 
 ## 🔨 Building (Nix + official Pebble CLI)
 

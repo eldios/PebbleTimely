@@ -35,3 +35,24 @@ Future work for TimelyNG. Roughly ordered by priority.
 ## Known limitations
 - The weather location name is only shown when picked as the "Location"
   complication; there is no automatic fallback display.
+
+## Inherited TODO (from the original Timely)
+
+Carried over from `TODO`/`XXX` markers in the upstream code — features that were
+stubbed but never finished. Decide per item whether to implement or remove the
+dead scaffolding (message keys, settings fields).
+
+- **Idle reminder** — a "you've been still, move" style reminder. The keys exist
+  but are unused: `idle_reminder`, `idle_vibe_patt`, `idle_message`,
+  `idle_start`, `idle_stop` (all marked `// TODO, UNUSED` in `Timely.c`).
+  Implement it or drop the keys + config.
+- **Per-slot colour inversion** — `inv_slot_stat` / `inv_slot_top` /
+  `inv_slot_bot` are read but do nothing. Wire them up or remove.
+- **`show_date` toggle** — the `show_date` key is read but unused (the date is a
+  complication now). Remove it, or repurpose as a quick date on/off.
+- **Per-weekday hourly vibration** — `vibe_days` was meant to limit the hourly
+  buzz to chosen days; today it only encodes the schedule mode. Restore an
+  actual day-of-week picker, or document it as mode-only.
+- **Real bold Unicode font** — non-Latin (e.g. RU) "today" header is faked with
+  a double-strike because there is no bold unicode font; add one for a clean
+  bold across all languages.
