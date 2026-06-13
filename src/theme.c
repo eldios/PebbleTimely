@@ -84,3 +84,43 @@ void setTodayColors(GContext* ctx) {
   graphics_context_set_fill_color(ctx, p.accent);
   graphics_context_set_text_color(ctx, p.accent_fg);
 }
+
+GColor weather_glyph_color(char glyph) {
+  Palette p = theme_palette();
+#ifdef PBL_COLOR
+  // Mono theme keeps the single-color look on color watches too.
+  if (settings_get()->theme == THEME_MONO) { return p.fg; }
+  // Saturated tints chosen to read on both light and dark backgrounds. Clouds,
+  // fog, tornado and anything unmapped stay the theme fg (which reads anywhere).
+  switch (glyph) {
+    case 'I':                                                    // sun
+      return GColorChromeYellow;
+    case 'J': case 'K':                                          // sunset / sunrise
+      return GColorOrange;
+    case 'N': case 'O': case 'P': case 'Q': case 'R':            // moon phases
+    case 'S': case 'T': case 'U': case 'V':
+      return GColorPastelYellow;
+    case '$': case '%': case '&':                                // rain
+    case '\'': case '(': case ')':                               // showers
+    case '*': case '+': case ',':                                // downpour
+    case '-': case '.': case '/':                                // drizzle
+      return GColorVividCerulean;
+    case '0': case '1': case '2':                                // sleet
+    case '3': case '4': case '5':                                // hail
+      return GColorBlue;
+    case '6': case '7': case '8':                                // flurries
+    case '9': case ':': case ';':                                // snow
+    case 'W':                                                    // snowflake
+      return GColorVividCerulean;
+    case 'B': case 'C': case 'D': case 'E':                      // wind
+      return GColorJaegerGreen;
+    case 'F': case 'G': case 'H':                                // lightning
+      return GColorChromeYellow;
+    default:                                                     // clouds, fog, haze, …
+      return p.fg;
+  }
+#else
+  (void)glyph;
+  return p.fg;
+#endif
+}

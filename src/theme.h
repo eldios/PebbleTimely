@@ -22,3 +22,8 @@ Palette theme_palette(void);
 void setColors(GContext* ctx);     // base: bg + fg
 void setInvColors(GContext* ctx);  // swapped patch: fg-on-bg
 void setTodayColors(GContext* ctx);// accent
+
+// Meaningful tint for a Climacons weather glyph (sun yellow, rain blue, …).
+// Color platforms only and only outside the Mono theme; otherwise returns the
+// palette fg so 1-bit watches and the monochrome theme stay as they were.
+GColor weather_glyph_color(char glyph);
