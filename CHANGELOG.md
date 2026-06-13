@@ -7,6 +7,25 @@ text to paste into the **Release notes** field when uploading the `.pbw` to the
 the build, so the portal does not auto-fill it). The store **Description** lives
 in [`PUBLISHING.md`](PUBLISHING.md).
 
+## 0.0.2
+
+- Settings are now WYSIWYG: saving the config page applies **every** value it
+  shows, not only the ones you touched. Previously the page sent just the keys
+  that changed against a phone-side baseline; when that baseline had drifted from
+  the watch (reinstall, a different phone, or defaults that never matched), a
+  setting shown in the page but left untouched was silently never applied — so
+  e.g. a complication could read "Location" in the settings yet stay "Date" on
+  the watch. Every non-translation setting is now always sent. Translation
+  strings stay delta-only (they are bulk and must fit the watch's message inbox);
+  the language picker resends them when it changes them.
+- Config page defaults now match the watch's firmware defaults (the
+  above-calendar Week and AM/PM slots, low-battery threshold), so a fresh install
+  shows the watch's real out-of-box state before the first save.
+- Coloured weather icons on colour watches (basalt, emery): the condition glyph
+  is tinted by meaning — sun amber, rain/snow blue, lightning amber, moon pale
+  yellow — while the temperature keeps the theme colour. Black-and-white watches
+  (diorite, flint) and the Mono theme are unchanged.
+
 ## 0.0.1 — first public release
 
 - Configurable complication rows (status bar, above the time, above the
