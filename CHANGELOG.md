@@ -7,6 +7,18 @@ text to paste into the **Release notes** field when uploading the `.pbw` to the
 the build, so the portal does not auto-fill it). The store **Description** lives
 in [`PUBLISHING.md`](PUBLISHING.md).
 
+## 0.0.3
+
+- Fix settings being completely ignored on a real watch. 0.0.2 sent every
+  setting by name in the `pebblejs://close` payload; on a real watch that
+  payload is length-limited, so it was truncated, the JSON failed to parse, and
+  the save was silently dropped (it worked on the emulator, which uses a
+  different return path). Numeric settings now travel positionally (values only,
+  no key names), shrinking the payload ~3.6× so it always fits — while still
+  applying every shown value (WYSIWYG preserved).
+- The loading splash now shows the real app version instead of a hard-coded
+  "3.0".
+
 ## 0.0.2
 
 - Settings are now WYSIWYG: saving the config page applies **every** value it

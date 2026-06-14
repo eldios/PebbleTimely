@@ -46,10 +46,15 @@ Rebble guides:
 **Keywords / tags:** calendar, weather, complications, date, week number,
 battery, moon phase, world time, minimal, localizable
 
-## Release notes — v0.0.1
+## Release notes — v0.0.3
 
-> First public release.
->
+> • Settings are now WYSIWYG and reliable: saving applies exactly what the
+>   configuration page shows (an earlier build could silently drop a save on a
+>   real watch).
+> • Coloured weather icons on colour watches (basalt, emery) — sun amber,
+>   rain/snow blue, lightning amber, moon pale yellow — with a Default / Colour /
+>   Black & White choice under Weather → Icon style.
+> • The loading splash shows the real app version.
 > • Configurable complication rows (status bar, above the time, above the
 >   calendar) — one centred or two side by side per row.
 > • One shared, alphabetical menu for every slot, incl. watch/phone battery,

@@ -12,7 +12,7 @@
 #include "suntimes.h"
 #define DEBUGLOG 0
 #define TRANSLOG 0
-#define CONFIG_VERSION "2.6"
+#define CONFIG_VERSION "3.0" // config-protocol version (own sequence); major bump: the save wire format changed
 /*
  * If you fork this code and release the resulting app, please be considerate and change all the appropriate values in appinfo.json 
  *
