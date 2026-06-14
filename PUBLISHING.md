@@ -46,7 +46,7 @@ Rebble guides:
 **Keywords / tags:** calendar, weather, complications, date, week number,
 battery, moon phase, world time, minimal, localizable
 
-## Release notes — v0.0.3
+## Release notes — v0.0.4
 
 > • Settings are now WYSIWYG and reliable: saving applies exactly what the
 >   configuration page shows (an earlier build could silently drop a save on a
