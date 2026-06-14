@@ -1,5 +1,7 @@
 'use strict';
 
+var WIRE_KEYS = require('./wirekeys'); // numeric settings sent positionally (see below)
+
 // Builds the offline settings page as a self-contained HTML string from the
 // config spec. No external CSS/JS/host: app.js serves it via a data: URI, so it
 // works with no network. On submit the page redirects to `return_to` (provided
@@ -197,6 +199,7 @@ function buildConfigPage(spec, current) {
     'return m?decodeURIComponent(m[1]):d;}' +
     'var RET=qp("return_to","pebblejs://close#");' +
     'var BASELINE=' + JSON.stringify(baseline) + ';' +
+    'var WK=' + JSON.stringify(WIRE_KEYS) + ';' +
     'var LANGS=' + JSON.stringify(LANGS) + ';' +
     // Language selector: resolve the chosen code, fill the (hidden) translation
     // fields from the table, and toggle the Custom editor.
@@ -239,14 +242,17 @@ function buildConfigPage(spec, current) {
     'els=document.querySelectorAll("[data-key]");for(var i=0;i<els.length;i++){' +
     'o[els[i].getAttribute("data-key")]=val(els[i]);}' +
     'if(augment(o)===false)return;' +
-    // WYSIWYG: always send every non-translation setting so the watch matches the
-    // page exactly (a drifted phone-side baseline must never leave a shown value
-    // unapplied). Translation strings (trans_*) are bulk; keep them delta-only so
-    // the payload stays within the watch's 1280-byte inbox — the language picker
-    // already resends them whenever it changes them.
-    'var send={};for(var k in o){' +
-    'if(k.indexOf("trans_")===0){if(String(o[k])!==String(BASELINE[k]))send[k]=o[k];}' +
-    'else{send[k]=o[k];}}' +
+    // WYSIWYG: send every numeric setting positionally (in WK order) so the watch
+    // matches the page exactly — a drifted phone-side baseline must never leave a
+    // shown value unapplied. Encoding values-only keeps the pebblejs://close
+    // payload tiny so a real watch carries it without truncation (the old verbose
+    // per-key dump got dropped). The two short string settings ride along by name,
+    // and changed translation strings are appended (delta — they are bulk).
+    'var n=[];for(var wi=0;wi<WK.length;wi++){var wv=o[WK[wi]];n.push(wv==null?0:wv);}' +
+    'var send={n:n};' +
+    'if(o.strftime_format!=null)send.strftime_format=o.strftime_format;' +
+    'if(o.language!=null)send.language=o.language;' +
+    'for(var k in o){if(k.indexOf("trans_")===0&&String(o[k])!==String(BASELINE[k]))send[k]=o[k];}' +
     'document.location=RET+encodeURIComponent(JSON.stringify(send));};';
   return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width,initial-scale=1">' +

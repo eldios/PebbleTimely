@@ -1,5 +1,6 @@
 var CONFIG_SPEC = require('./config');
 var buildConfigPage = require('./configpage');
+var WIRE_KEYS = require('./wirekeys'); // decode the positional numeric settings (see webviewclosed)
 
 // The bundled SunCalc library (below) used to attach itself to `window`; under
 // the CommonJS bundler there is no global object, so it populates this
@@ -312,18 +313,25 @@ V = waning crescent 0.25 +
 Pebble.addEventListener("webviewclosed", function (e) {
     if (!e || !e.response) { return; } // user cancelled
 
-    // The page sends every non-translation setting plus any changed translation
-    // string. Merge them into the stored settings so the config page keeps the
-    // full picture (incl. translations) and doesn't show untouched settings as
-    // reset on the next open.
+    // The page sends the numeric settings positionally in `n` (WIRE_KEYS order),
+    // plus the string settings and any changed translations by name. Expand `n`
+    // back to keys to rebuild the full desired state. (A legacy flat payload with
+    // no `n` is still accepted: its keys pass through unchanged.)
     var dict;
     try { dict = JSON.parse(decodeURIComponent(e.response)); } catch (err) { return; }
+    var full = {};
+    if (dict.n && dict.n.length) {
+        for (var i = 0; i < WIRE_KEYS.length; i++) { full[WIRE_KEYS[i]] = dict.n[i]; }
+        delete dict.n;
+    }
+    for (var k in dict) { full[k] = dict[k]; } // strings, translations, or legacy flat keys
+
     var stored = {};
     try { stored = JSON.parse(localStorage.getItem("timely_settings") || "{}"); } catch (err) {}
-    for (var k in dict) { stored[k] = dict[k]; }
+    for (var sk in full) { stored[sk] = full[sk]; }
     localStorage.setItem("timely_settings", JSON.stringify(stored));
 
-    Pebble.sendAppMessage(dict,
+    Pebble.sendAppMessage(full,
         function (e) {
             console.log("Delivered config with transactionId=" + e.data.transactionId);
         },
