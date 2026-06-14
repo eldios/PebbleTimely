@@ -151,6 +151,7 @@ static bool showing_statusbar = true;
 #define AK_SLOT_CTR_L          116
 #define AK_SLOT_CTR_R          117
 #define AK_BATT_STYLE          118
+#define AK_WEATHER_ICONS       119
 
 #define AK_TRANS_ABBR_SUNDAY    500
 #define AK_TRANS_ABBR_MONDAY    501
@@ -1978,6 +1979,13 @@ void in_configuration_handler(DictionaryIterator *received, void *context) {
         weather_request = app_timer_register(1000, &request_weather, NULL);
       }
       adv_settings_get()->weather_update = appkey->value->uint8;
+    }
+
+    // AK_WEATHER_ICONS == weather icon style (0 default / 1 colour / 2 B&W)
+    appkey = dict_find(received, AK_WEATHER_ICONS);
+    if (appkey != NULL) {
+      adv_settings_get()->weather_icons = appkey->value->uint8;
+      weather_mark_dirty();
     }
 
     // AK_THEME == color theme id; AK_THEME_MODE == 0 light / 1 dark / 2 auto

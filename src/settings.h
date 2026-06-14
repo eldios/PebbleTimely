@@ -57,7 +57,10 @@ typedef struct persist_adv_settings { // 243 bytes
   uint8_t token_type[2];   //  2 bytes
   char token_code[2][65];  //130 bytes
   uint8_t slots[10];       // 10 bytes
+  uint8_t weather_icons;   //  1 byte: 0 default (colour where supported), 1 force colour, 2 force B&W
 } __attribute__((__packed__)) persist_adv_settings;
+// New fields go at the END: persist_read_data tolerates a shorter stored blob,
+// leaving appended fields at their settings.c default for pre-existing installs.
 
 persist *settings_get(void);
 persist_adv_settings *adv_settings_get(void);

@@ -54,7 +54,8 @@ static persist_adv_settings s_adv = {
   .clock_font = 1,
   .token_type = { 0, 0 },
   .token_code = { "", "" },
-  .slots = { 0, 1, 2, 3, 0, 1, 0, 1, 0, 1 }
+  .slots = { 0, 1, 2, 3, 0, 1, 0, 1, 0, 1 },
+  .weather_icons = 0 // Default: colour on colour watches, B&W on the rest
 };
 
 persist *settings_get(void) { return &s_settings; }

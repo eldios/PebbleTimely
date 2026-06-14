@@ -134,7 +134,10 @@ module.exports = [
       { key: 'weather_fmt', label: 'Units', type: 'select', def: 0,
         options: [['Celsius', 0], ['Fahrenheit', 1]] },
       { key: 'weather_update', label: 'Update every', type: 'select', def: 15,
-        options: [['Off', 0], ['15 min', 15], ['30 min', 30], ['60 min', 60]] }
+        options: [['Off', 0], ['15 min', 15], ['30 min', 30], ['60 min', 60]] },
+      { key: 'weather_icons', label: 'Icon style', type: 'select', def: 0,
+        options: [['Default', 0], ['Colour', 1], ['Black & White', 2]],
+        note: 'Default: colour on colour watches, B&W on the rest. Colour and Black & White force it.' }
     ]
   },
   {

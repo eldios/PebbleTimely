@@ -88,8 +88,10 @@ void setTodayColors(GContext* ctx) {
 GColor weather_glyph_color(char glyph) {
   Palette p = theme_palette();
 #ifdef PBL_COLOR
-  // Mono theme keeps the single-color look on color watches too.
-  if (settings_get()->theme == THEME_MONO) { return p.fg; }
+  uint8_t style = adv_settings_get()->weather_icons;
+  if (style == WEATHER_ICONS_BW) { return p.fg; } // forced monochrome
+  // Default follows the Mono theme's single-colour look; Colour overrides it.
+  if (style == WEATHER_ICONS_DEFAULT && settings_get()->theme == THEME_MONO) { return p.fg; }
   // Saturated tints chosen to read on both light and dark backgrounds. Clouds,
   // fog, tornado and anything unmapped stay the theme fg (which reads anywhere).
   switch (glyph) {

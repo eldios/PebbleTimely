@@ -25,6 +25,9 @@ in [`PUBLISHING.md`](PUBLISHING.md).
   is tinted by meaning — sun amber, rain/snow blue, lightning amber, moon pale
   yellow — while the temperature keeps the theme colour. Black-and-white watches
   (diorite, flint) and the Mono theme are unchanged.
+- New **Weather → Icon style** setting: *Default* (colour on colour watches, B&W
+  on the rest), *Colour* (force the tinted icons, overriding the Mono theme), or
+  *Black & White* (force the classic monochrome glyph on colour watches too).
 
 ## 0.0.1 — first public release
 
