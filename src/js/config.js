@@ -105,8 +105,8 @@ module.exports = [
       { key: 'slot_stat_r', label: 'Status bar — right', type: 'select', def: 15, options: SLOTS },
       { key: 'slot_ctr_l', label: 'Above time — left', type: 'select', def: 18, options: SLOTS },
       { key: 'slot_ctr_r', label: 'Above time — right', type: 'select', def: 0, options: SLOTS },
-      { key: 'style_week', label: 'Above calendar — left', type: 'select', def: 0, options: SLOTS },
-      { key: 'style_am_pm', label: 'Above calendar — right', type: 'select', def: 0, options: SLOTS },
+      { key: 'style_week', label: 'Above calendar — left', type: 'select', def: 3, options: SLOTS },
+      { key: 'style_am_pm', label: 'Above calendar — right', type: 'select', def: 5, options: SLOTS },
       { key: 'batt_style', label: 'Battery style', type: 'select', def: 2,
         options: [['Bar (fills) with %', 0], ['Text %', 1], ['Icon + %', 2], ['Bar + icon', 3]],
         note: 'How the Watch/Phone battery complications are drawn.' },
@@ -134,7 +134,10 @@ module.exports = [
       { key: 'weather_fmt', label: 'Units', type: 'select', def: 0,
         options: [['Celsius', 0], ['Fahrenheit', 1]] },
       { key: 'weather_update', label: 'Update every', type: 'select', def: 15,
-        options: [['Off', 0], ['15 min', 15], ['30 min', 30], ['60 min', 60]] }
+        options: [['Off', 0], ['15 min', 15], ['30 min', 30], ['60 min', 60]] },
+      { key: 'weather_icons', label: 'Icon style', type: 'select', def: 0,
+        options: [['Default', 0], ['Colour', 1], ['Black & White', 2]],
+        note: 'Default: colour on colour watches, B&W on the rest. Colour and Black & White force it.' }
     ]
   },
   {

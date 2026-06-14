@@ -1,7 +1,7 @@
 {
   "name": "TimelyNG",
   "author": "Emanuele 'Lele' Calo",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A calendar watchface for Pebble: date, time and weather up top, a 3-week calendar below, and fully configurable complication rows. Appstore copy in PUBLISHING.md; release notes in CHANGELOG.md.",
   "private": true,
   "keywords": [
@@ -155,6 +155,7 @@
       "slot_ctr_l": 116,
       "slot_ctr_r": 117,
       "batt_style": 118,
+      "weather_icons": 119,
       "trans_abbr_sunday": 500,
       "trans_abbr_monday": 501,
       "trans_abbr_tuesday": 502,

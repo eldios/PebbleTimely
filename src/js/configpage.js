@@ -167,9 +167,11 @@ var CSS = [
 function buildConfigPage(spec, current) {
   current = current || {};
   var body = '';
-  // Baseline = the value each control starts at; on submit we send only the keys
-  // that actually changed, keeping the pebblejs://close payload small (a full
-  // dump of every setting exceeds the close-URL length and gets dropped).
+  // Baseline = the value each control starts at. It is only used to delta the
+  // bulky translation strings (trans_*): every other setting is always sent so
+  // the watch ends up matching exactly what the page shows (WYSIWYG). The phone
+  // copy used to seed this baseline is not authoritative — it can drift from the
+  // watch — so a "shown but unchanged" value must never be silently dropped.
   var baseline = {};
   for (var s = 0; s < spec.length; s++) {
     var sec = spec[s];
@@ -237,8 +239,14 @@ function buildConfigPage(spec, current) {
     'els=document.querySelectorAll("[data-key]");for(var i=0;i<els.length;i++){' +
     'o[els[i].getAttribute("data-key")]=val(els[i]);}' +
     'if(augment(o)===false)return;' +
-    // Send only changed keys: the watch keeps its current value for anything omitted.
-    'var send={};for(var k in o){if(String(o[k])!==String(BASELINE[k]))send[k]=o[k];}' +
+    // WYSIWYG: always send every non-translation setting so the watch matches the
+    // page exactly (a drifted phone-side baseline must never leave a shown value
+    // unapplied). Translation strings (trans_*) are bulk; keep them delta-only so
+    // the payload stays within the watch's 1280-byte inbox — the language picker
+    // already resends them whenever it changes them.
+    'var send={};for(var k in o){' +
+    'if(k.indexOf("trans_")===0){if(String(o[k])!==String(BASELINE[k]))send[k]=o[k];}' +
+    'else{send[k]=o[k];}}' +
     'document.location=RET+encodeURIComponent(JSON.stringify(send));};';
   return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">' +
     '<meta name="viewport" content="width=device-width,initial-scale=1">' +
