@@ -130,7 +130,8 @@ Pebble.addEventListener("showConfiguration", function () {
     try { current = JSON.parse(localStorage.getItem("timely_settings") || "{}"); } catch (err) {}
     var html = buildConfigPage(CONFIG_SPEC, current);
     // Self-contained page, no server: the watch hands the whole page to the phone.
-    Pebble.openURL("data:text/html," + encodeURIComponent(html));
+    // charset=utf-8 (as Clay does) so accented translation strings survive.
+    Pebble.openURL("data:text/html;charset=utf-8," + encodeURIComponent(html));
 });
 
 function getWatchVersion() {
@@ -313,12 +314,20 @@ V = waning crescent 0.25 +
 Pebble.addEventListener("webviewclosed", function (e) {
     if (!e || !e.response) { return; } // user cancelled
 
+    // Decode like Clay: the phone app may hand back e.response already decoded.
+    // Re-running decodeURIComponent on it throws "URI malformed" as soon as the
+    // payload holds a literal % (strftime_format defaults to "%Y-%m-%d"), which
+    // silently dropped EVERY save. Only decode when it is still percent-encoded
+    // (an encoded payload starts with %7B, a decoded one with "{").
+    var raw = e.response;
+    var decoded = raw.match(/^\{/) ? raw : decodeURIComponent(raw);
+
     // The page sends the numeric settings positionally in `n` (WIRE_KEYS order),
     // plus the string settings and any changed translations by name. Expand `n`
     // back to keys to rebuild the full desired state. (A legacy flat payload with
     // no `n` is still accepted: its keys pass through unchanged.)
     var dict;
-    try { dict = JSON.parse(decodeURIComponent(e.response)); } catch (err) { return; }
+    try { dict = JSON.parse(decoded); } catch (err) { return; }
     var full = {};
     if (dict.n && dict.n.length) {
         for (var i = 0; i < WIRE_KEYS.length; i++) { full[WIRE_KEYS[i]] = dict.n[i]; }

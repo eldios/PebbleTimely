@@ -7,6 +7,17 @@ text to paste into the **Release notes** field when uploading the `.pbw` to the
 the build, so the portal does not auto-fill it). The store **Description** lives
 in [`PUBLISHING.md`](PUBLISHING.md).
 
+## 0.0.4
+
+- Fix settings never saving on a real watch — the actual root cause. The config
+  handler re-ran `decodeURIComponent` on a response the phone app had already
+  decoded; the literal `%` in the default `strftime_format` (`"%Y-%m-%d"`) made
+  it throw "URI malformed", so every save was silently dropped. Decode
+  defensively like Clay — only when the response is still percent-encoded. (The
+  0.0.2 WYSIWYG change exposed this by sending `strftime_format` on every save;
+  0.0.3's payload-size change did not address the real fault.)
+- Serve the config page as UTF-8 so accented translation strings survive.
+
 ## 0.0.3
 
 - Fix settings being completely ignored on a real watch. 0.0.2 sent every
