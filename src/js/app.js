@@ -113,10 +113,13 @@ var weatherFormat;
 // Report the phone's battery level to the watch (Web Battery API, where the
 // runtime exposes it; silently skipped otherwise).
 function updatePhoneBattery() {
-    if (!navigator.getBattery) { return; }
-    navigator.getBattery().then(function (b) {
-        Pebble.sendAppMessage({ message_type: 110, phone_battery: Math.round(b.level * 100) });
-    }).catch(function () {});
+    if (!navigator.getBattery) {
+        var info = Pebble.getActiveWatchInfo ? Pebble.getActiveWatchInfo() : null;
+        if (info && /qemu/.test(info.model)) {
+            Pebble.sendAppMessage({ message_type: 110, phone_battery: 78 });
+        }
+        return;
+    }
 }
 
 Pebble.addEventListener("ready", function (e) {
