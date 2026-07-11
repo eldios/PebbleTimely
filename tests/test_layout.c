@@ -62,3 +62,14 @@ UTEST(clockfont, scales_with_band_and_width) {
   ASSERT_EQ(CLOCK_FONT_LECO_32,   clock_font_for(144, 40));
   ASSERT_EQ(CLOCK_FONT_LECO_28,   clock_font_for(144, 30)); // very short
 }
+
+// Pure weather-glyph sizing: narrow screens stay compact; wide screens take
+// the 48px glyph whenever the band fits glyph + temperature (>= 64px).
+UTEST(weatherglyph, scales_with_band_and_width) {
+  ASSERT_EQ(28, weather_glyph_size_for(144, 40)); // basalt, all rows on
+  ASSERT_EQ(28, weather_glyph_size_for(144, 92)); // narrow never grows
+  ASSERT_EQ(48, weather_glyph_size_for(200, 65)); // emery, all rows on
+  ASSERT_EQ(48, weather_glyph_size_for(200, 75)); // emery, statusbar off
+  ASSERT_EQ(40, weather_glyph_size_for(200, 55)); // shorter band keeps 40
+  ASSERT_EQ(40, weather_glyph_size_for(200, 63)); // just under threshold
+}

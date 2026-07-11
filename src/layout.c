@@ -66,6 +66,12 @@ ClockFont clock_font_for(int width, int band_h) {
   return CLOCK_FONT_LECO_28;
 }
 
+int weather_glyph_size_for(int width, int band_h) {
+  if (width < 180) { return 28; }
+  if (band_h >= 64) { return 48; }
+  return 40;
+}
+
 static TimelyLayout s_current;
 void layout_store(TimelyLayout l) { s_current = l; }
 TimelyLayout layout_get(void) { return s_current; }

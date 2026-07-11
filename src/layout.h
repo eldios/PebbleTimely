@@ -37,6 +37,11 @@ typedef enum {
 } ClockFont;
 ClockFont clock_font_for(int width, int band_h);
 
+// Weather glyph size (Climacons px) as a pure, testable decision. Narrow
+// screens stay at the compact 28; wide screens take 48 when the band fits
+// glyph + temperature (>= 64px), else 40.
+int weather_glyph_size_for(int width, int band_h);
+
 // The most recently computed layout (set by the view at window_load); read by
 // components that render proportionally (calendar, etc.).
 void layout_store(TimelyLayout l);
