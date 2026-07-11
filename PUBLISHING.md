@@ -46,9 +46,11 @@ Rebble guides:
 **Keywords / tags:** calendar, weather, complications, date, week number,
 battery, moon phase, world time, minimal, localizable
 
-## Release notes — v0.0.4
+## Release notes — v0.0.5
 
-> • Settings are now WYSIWYG and reliable: saving applies exactly what the
+> • Bigger weather icon on large screens (Pebble Time 2 / Core Time 2): the
+>   condition glyph grows from 40px to 48px and scales with the time band.
+> • Settings are WYSIWYG and reliable: saving applies exactly what the
 >   configuration page shows (an earlier build could silently drop a save on a
 >   real watch).
 > • Coloured weather icons on colour watches (basalt, emery) — sun amber,

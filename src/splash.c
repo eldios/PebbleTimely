@@ -3,7 +3,7 @@
 #include "layout.h"
 
 // Version shown on the loading splash. Keep in sync with package.json "version".
-#define APP_VERSION "0.0.4"
+#define APP_VERSION "0.0.5"
 
 static Layer *s_splash_layer;
 

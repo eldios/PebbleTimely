@@ -7,6 +7,13 @@ text to paste into the **Release notes** field when uploading the `.pbw` to the
 the build, so the portal does not auto-fill it). The store **Description** lives
 in [`PUBLISHING.md`](PUBLISHING.md).
 
+## 0.0.5
+
+- Bigger weather icon on large screens (Pebble Time 2 / Core Time 2): the
+  condition glyph grows from 40px to 48px and now scales with the time band,
+  like the clock font already did. Requested by a user; narrow screens are
+  unchanged.
+
 ## 0.0.4
 
 - Fix settings never saving on a real watch — the actual root cause. The config
