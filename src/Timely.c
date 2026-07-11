@@ -44,6 +44,21 @@ static GFont unifont_16_bold;
 GFont cal_normal;
 GFont cal_bold;
 GFont climacons;
+static int s_climacons_size = 0; // loaded climacons px; 0 = not loaded yet
+
+// (Re)load the climacons font when the band-driven size class changes. A
+// single handle stays live so RAM never holds two copies; reloads only happen
+// on settings toggles that resize the time band.
+static void ensure_climacons(int size) {
+  if (size == s_climacons_size) { return; }
+  if (climacons) { fonts_unload_custom_font(climacons); }
+  climacons = fonts_load_custom_font(resource_get_handle(
+    size == 48 ? RESOURCE_ID_FONT_CLIMACONS_48 :
+    size == 40 ? RESOURCE_ID_FONT_CLIMACONS_40 :
+                 RESOURCE_ID_FONT_CLIMACONS_28));
+  s_climacons_size = size;
+  weather_set_glyph_size(size);
+}
 
 static BitmapLayer *bmp_charging_layer;
 static GBitmap *image_charging_icon;
@@ -885,6 +900,7 @@ char *time_font_key(void) {
 void position_time_layer() {
   // The clock and the weather both live in the time band; seat them on it so the
   // weather is vertically centred against the time instead of floating above.
+  ensure_climacons(weather_glyph_size_for(DEVICE_WIDTH, REL_CLOCK_TIME_HEIGHT));
   layer_set_frame( text_layer_get_layer(time_layer), GRect(REL_CLOCK_TIME_LEFT, REL_CLOCK_TIME_TOP, DEVICE_WIDTH, REL_CLOCK_TIME_HEIGHT) );
   weather_set_frame( GRect(REL_CLOCK_TIME_LEFT, REL_CLOCK_TIME_TOP, DEVICE_WIDTH, REL_CLOCK_TIME_HEIGHT) );
 }
@@ -1363,17 +1379,14 @@ static void window_load(Window *window) {
 
   unifont_16 = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_UNICODE_16));
   unifont_16_bold = fonts_load_custom_font(resource_get_handle(RESOURCE_ID_FONT_UNICODE_BOLD_16));
-  // Narrow screens use a slightly smaller weather glyph so it balances the
-  // compact clock/temperature; wide screens (emery) keep the larger one.
-  climacons  = fonts_load_custom_font(resource_get_handle(
-    (DEVICE_WIDTH >= 180) ? RESOURCE_ID_FONT_CLIMACONS_40 : RESOURCE_ID_FONT_CLIMACONS_28));
-  weather_set_compact(DEVICE_WIDTH < 180);
   cal_normal = unifont_16;
   cal_bold   = unifont_16_bold;
 
   Layer *window_layer = window_get_root_layer(window);
   GRect bounds = layer_get_bounds(window_layer);
   compute_layout(bounds.size.w, bounds.size.h);
+  // Glyph size follows the time band (like the clock font); loads the font too.
+  ensure_climacons(weather_glyph_size_for(DEVICE_WIDTH, REL_CLOCK_TIME_HEIGHT));
 
   slot_status = layer_create(GRect(0,LAYOUT_STAT,DEVICE_WIDTH,LAYOUT_SLOT_TOP));
   //slot_status = layer_create(GRect(0,0,DEVICE_WIDTH,DEVICE_HEIGHT));

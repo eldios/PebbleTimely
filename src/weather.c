@@ -15,9 +15,9 @@ static weather_data s_weather = {
 weather_data *weather_state(void) { return &s_weather; }
 
 static Layer *s_weather_layer;
-static bool s_compact = false; // narrow screens (144px): smaller glyph + temperature
+static int s_glyph_size = 40; // climacons px: 28 (narrow) / 40 / 48 (tall wide band)
 
-void weather_set_compact(bool compact) { s_compact = compact; }
+void weather_set_glyph_size(int size) { s_glyph_size = size; }
 
 static void weather_render(Layer *me, GContext *ctx) {
   static char temp_current[12] = "N/A";
@@ -34,10 +34,11 @@ static void weather_render(Layer *me, GContext *ctx) {
   // The layer IS the time band. The icon-over-temperature block is centred in
   // the band so it lines up with the clock and fills the column (big glyph on
   // wide screens), without spilling into the calendar below.
-  GFont temp_font = fonts_get_system_font(s_compact ? FONT_KEY_GOTHIC_18 : FONT_KEY_GOTHIC_28);
-  int icon_w = s_compact ? 34 : 42;    // climacons box (28px glyph / 40px glyph)
-  int gap    = s_compact ? 18 : 32;    // temperature baseline below the icon top
-  int temp_h = s_compact ? 18 : 28;
+  bool compact = (s_glyph_size == 28);
+  GFont temp_font = fonts_get_system_font(compact ? FONT_KEY_GOTHIC_18 : FONT_KEY_GOTHIC_28);
+  int icon_w = compact ? 34 : (s_glyph_size == 48 ? 50 : 42); // climacons box
+  int gap    = compact ? 18 : (s_glyph_size == 48 ? 36 : 32); // temp baseline below icon top
+  int temp_h = compact ? 18 : 28;
   int band_h = layer_get_bounds(me).size.h;
   int block  = gap + temp_h;           // total visual height of icon+temp
   int top = (band_h - block) / 2;
