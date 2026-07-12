@@ -46,8 +46,10 @@ Rebble guides:
 **Keywords / tags:** calendar, weather, complications, date, week number,
 battery, moon phase, world time, minimal, localizable
 
-## Release notes — v0.0.5
+## Release notes — v0.0.6
 
+> • Fix the phone-battery complication always showing empty on a real watch
+>   (0.0.5 regression).
 > • Bigger weather icon on large screens (Pebble Time 2 / Core Time 2): the
 >   condition glyph grows from 40px to 48px and scales with the time band.
 > • Settings are WYSIWYG and reliable: saving applies exactly what the

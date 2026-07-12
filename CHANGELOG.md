@@ -7,6 +7,12 @@ text to paste into the **Release notes** field when uploading the `.pbw` to the
 the build, so the portal does not auto-fill it). The store **Description** lives
 in [`PUBLISHING.md`](PUBLISHING.md).
 
+## 0.0.6
+
+- Fix the phone-battery complication always showing empty on a real watch:
+  0.0.5's emulator mock accidentally replaced the real Battery Status API path
+  instead of complementing it, so the phone level was never sent.
+
 ## 0.0.5
 
 - Bigger weather icon on large screens (Pebble Time 2 / Core Time 2): the

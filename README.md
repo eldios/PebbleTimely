@@ -6,7 +6,7 @@
 calendar below, and fully configurable complication rows you arrange yourself.**
 
 [![CI](https://github.com/eldios/TimelyNG/actions/workflows/ci.yml/badge.svg)](https://github.com/eldios/TimelyNG/actions/workflows/ci.yml)
-![Version](https://img.shields.io/badge/version-0.0.5-blue)
+![Version](https://img.shields.io/badge/version-0.0.6-blue)
 ![Platforms](https://img.shields.io/badge/Pebble-emery%20·%20flint%20·%20basalt%20·%20diorite-orange)
 ![Language](https://img.shields.io/badge/C-C99-555?logo=c)
 ![PebbleKit JS](https://img.shields.io/badge/config-PebbleKit%20JS-f5a623?logo=javascript&logoColor=white)
