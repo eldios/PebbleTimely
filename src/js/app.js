@@ -120,6 +120,9 @@ function updatePhoneBattery() {
         }
         return;
     }
+    navigator.getBattery().then(function (b) {
+        Pebble.sendAppMessage({ message_type: 110, phone_battery: Math.round(b.level * 100) });
+    }).catch(function () {});
 }
 
 Pebble.addEventListener("ready", function (e) {
