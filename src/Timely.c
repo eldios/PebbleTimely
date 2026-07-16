@@ -732,6 +732,10 @@ static GBitmap *stat_slot_icon(uint8_t content) {
 static bool is_battery_content(uint8_t c) { return c == 15 || c == 16; }
 static bool batt_style_is_bar(uint8_t s) { return s == 0 || s == 3; } // 0 bar, 3 bar+icon
 
+// Whether the charging/DND/hourvibe icon is currently visible; the right
+// battery bar yields 22px to it (see batt_box_geom).
+static bool s_status_icon_shown = false;
+
 // Battery-bar box geometry for one side. with_icon (bar+icon style) reserves a
 // leading 18px for the glyph on the outer edge and narrows the box.
 static void batt_box_geom(bool is_right, bool with_icon, int *bx, int *bw) {
@@ -739,6 +743,7 @@ static void batt_box_geom(bool is_right, bool with_icon, int *bx, int *bw) {
   if (is_right) {
     *bx = half + 2;
     *bw = with_icon ? half - 22 : half - 12;
+    if (s_status_icon_shown) { *bx += 22; *bw -= 22; } // status icon docks at half+2
   } else {
     *bx = with_icon ? 20 : 2;
     *bw = with_icon ? half - 28 : half - 10;
@@ -858,6 +863,11 @@ void refresh_stat_slots(void) {
   if (battery_layer) { // battery_layer draws the bar outlines
     layer_set_hidden(battery_layer, !bars);
     if (bars) { layer_mark_dirty(battery_layer); }
+  }
+  if (bmp_charging_layer) { // status icon dodges the right-slot battery bar
+    bool right_bar = bar && is_battery_content(cr);
+    layer_set_frame(bitmap_layer_get_layer(bmp_charging_layer),
+                    GRect(chrg_icon_x_for(DEVICE_WIDTH, right_bar), STAT_CHRG_ICON_TOP, 20, 20));
   }
   int lx, lw, rx, rw;
   batt_box_geom(false, with_icon, &lx, &lw);
@@ -1155,6 +1165,10 @@ void set_status_charging_icon() {
     chrg_shown = false;
   }
   layer_set_hidden(bitmap_layer_get_layer(bmp_charging_layer), !chrg_shown);
+  if (chrg_shown != s_status_icon_shown) { // bars re-geom around the icon
+    s_status_icon_shown = chrg_shown;
+    refresh_stat_slots();
+  }
 }
 
 static void toggle_slot_bottom(void *data) {

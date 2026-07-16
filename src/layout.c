@@ -72,6 +72,11 @@ int weather_glyph_size_for(int width, int band_h) {
   return 40;
 }
 
+int chrg_icon_x_for(int width, int right_slot_is_bar) {
+  if (right_slot_is_bar) { return width / 2 + 2; } // dock where the bar starts
+  return width - 68;
+}
+
 static TimelyLayout s_current;
 void layout_store(TimelyLayout l) { s_current = l; }
 TimelyLayout layout_get(void) { return s_current; }

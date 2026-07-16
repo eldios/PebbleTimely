@@ -63,6 +63,15 @@ UTEST(clockfont, scales_with_band_and_width) {
   ASSERT_EQ(CLOCK_FONT_LECO_28,   clock_font_for(144, 30)); // very short
 }
 
+// Status icon (charging/DND/hourvibe) docks at the right bar's former origin
+// (width/2+2, the bar yields 22px); legacy spot is left of the 44px battery box.
+UTEST(chrgicon, dodges_right_battery_bar) {
+  ASSERT_EQ(132, chrg_icon_x_for(200, 0)); // emery, legacy position
+  ASSERT_EQ(76,  chrg_icon_x_for(144, 0)); // basalt, legacy position
+  ASSERT_EQ(102, chrg_icon_x_for(200, 1)); // emery: docked at half+2
+  ASSERT_EQ(74,  chrg_icon_x_for(144, 1)); // basalt: docked at half+2
+}
+
 // Pure weather-glyph sizing: narrow screens stay compact; wide screens take
 // the 48px glyph whenever the band fits glyph + temperature (>= 64px).
 UTEST(weatherglyph, scales_with_band_and_width) {

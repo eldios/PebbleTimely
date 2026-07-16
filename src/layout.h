@@ -42,6 +42,11 @@ ClockFont clock_font_for(int width, int band_h);
 // glyph + temperature (>= 64px), else 40.
 int weather_glyph_size_for(int width, int band_h);
 
+// Status icon (charging/DND/hourvibe) x position. The legacy spot sits left of
+// the 44px battery box; when the right status slot draws a battery bar (box
+// from width/2+2) the icon moves clear of it.
+int chrg_icon_x_for(int width, int right_slot_is_bar);
+
 // The most recently computed layout (set by the view at window_load); read by
 // components that render proportionally (calendar, etc.).
 void layout_store(TimelyLayout l);
