@@ -44,8 +44,13 @@ int weather_glyph_size_for(int width, int band_h);
 
 // Status icon (charging/DND/hourvibe) x position. The legacy spot sits left of
 // the 44px battery box; when the right status slot draws a battery bar (box
-// from width/2+2) the icon moves clear of it.
+// from width/2+2) the icon moves clear of it. Narrow screens only — wide
+// screens use the status tray below the clock instead.
 int chrg_icon_x_for(int width, int right_slot_is_bar);
+
+// Status-tray slot x (wide screens): 20px icons pack from the right edge
+// (width-4) at a 22px pitch; idx 0 is the rightmost.
+int status_tray_x(int width, int idx);
 
 // The most recently computed layout (set by the view at window_load); read by
 // components that render proportionally (calendar, etc.).

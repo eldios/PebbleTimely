@@ -77,6 +77,15 @@ int chrg_icon_x_for(int width, int right_slot_is_bar) {
   return width - 68;
 }
 
+int status_tray_x(int width, int idx) {
+  // all values below are in pixel
+  int icon_size = 20;
+  int icon_gap = 2;
+  int icon_box = icon_size + icon_gap;
+  int border_right = 2 ;
+  return width - (border_right + icon_box) - (idx * icon_box);
+}
+
 static TimelyLayout s_current;
 void layout_store(TimelyLayout l) { s_current = l; }
 TimelyLayout layout_get(void) { return s_current; }

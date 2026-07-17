@@ -61,6 +61,9 @@ static void ensure_climacons(int size) {
 }
 
 static BitmapLayer *bmp_charging_layer;
+// Wide screens: charging/DND/hourvibe shown side by side under the clock
+// (narrow screens keep the single statusbar icon in bmp_charging_layer).
+static BitmapLayer *tray_layers[3];
 static GBitmap *image_charging_icon;
 static GBitmap *image_hourvibe_icon;
 static GBitmap *image_dnd_icon;
@@ -907,12 +910,34 @@ char *time_font_key(void) {
   }
 }
 
+// Wide screens: pack the active status icons (fixed order charging/DND/
+// hourvibe) from the right edge, seated on the bottom of the time band.
+static void refresh_status_tray(void) {
+  if (!tray_layers[0]) { return; } // narrow screens / not built yet
+  bool active[3] = {
+    battery_charging,
+    dnd_period_active,
+    !battery_plugged && settings_get()->vibe_hour && vibe_period_active,
+  };
+  int y = REL_CLOCK_TIME_TOP + REL_CLOCK_TIME_HEIGHT - 15;
+  int idx = 0;
+  for (int i = 0; i < 3; i++) {
+    Layer *l = bitmap_layer_get_layer(tray_layers[i]);
+    layer_set_hidden(l, !active[i]);
+    if (active[i]) {
+      layer_set_frame(l, GRect(status_tray_x(DEVICE_WIDTH, idx), y, 20, 20));
+      idx++;
+    }
+  }
+}
+
 void position_time_layer() {
   // The clock and the weather both live in the time band; seat them on it so the
   // weather is vertically centred against the time instead of floating above.
   ensure_climacons(weather_glyph_size_for(DEVICE_WIDTH, REL_CLOCK_TIME_HEIGHT));
   layer_set_frame( text_layer_get_layer(time_layer), GRect(REL_CLOCK_TIME_LEFT, REL_CLOCK_TIME_TOP, DEVICE_WIDTH, REL_CLOCK_TIME_HEIGHT) );
   weather_set_frame( GRect(REL_CLOCK_TIME_LEFT, REL_CLOCK_TIME_TOP, DEVICE_WIDTH, REL_CLOCK_TIME_HEIGHT) );
+  refresh_status_tray(); // the tray sits on the band's bottom edge
 }
 
 void update_datetime_subtext() {
@@ -1153,6 +1178,7 @@ static void battery_status_send(void *data) {
 }
 
 void set_status_charging_icon() {
+  if (DEVICE_WIDTH >= 180) { refresh_status_tray(); return; } // wide: tray under the clock
   // this icon shows either DND, hourly vibration, or charging...
   bool chrg_shown = true;
   if (battery_charging) { // charging
@@ -1304,6 +1330,9 @@ static void apply_palette(void) {
   tint_icon(image_watch_icon, fg);
   tint_icon(image_bt16_icon, fg);
   if (bmp_charging_layer)   { layer_mark_dirty(bitmap_layer_get_layer(bmp_charging_layer)); }
+  for (int i = 0; i < 3; i++) {
+    if (tray_layers[i]) { layer_mark_dirty(bitmap_layer_get_layer(tray_layers[i])); }
+  }
   if (bmp_phone_layer)      { layer_mark_dirty(bitmap_layer_get_layer(bmp_phone_layer)); }
   if (bmp_watch_layer)      { layer_mark_dirty(bitmap_layer_get_layer(bmp_watch_layer)); }
 #endif
@@ -1456,6 +1485,18 @@ static void window_load(Window *window) {
   layer_set_update_proc(datetime_layer, datetime_layer_update_callback);
   layer_add_child(slot_top, datetime_layer);
 
+  if (DEVICE_WIDTH >= 180) { // status tray under the clock (see refresh_status_tray)
+    GBitmap *tray_bmps[3] = { image_charging_icon, image_dnd_icon, image_hourvibe_icon };
+    for (int i = 0; i < 3; i++) {
+      tray_layers[i] = bitmap_layer_create(GRect(0, 0, 20, 20));
+      bitmap_layer_set_compositing_mode(tray_layers[i], GCompOpSet);
+      bitmap_layer_set_bitmap(tray_layers[i], tray_bmps[i]);
+      layer_set_hidden(bitmap_layer_get_layer(tray_layers[i]), true);
+      layer_add_child(datetime_layer, bitmap_layer_get_layer(tray_layers[i]));
+    }
+    refresh_status_tray();
+  }
+
   calendar_create(slot_bot, slot_bot_bounds);
 
   splash_create(slot_bot, slot_bot_bounds);
@@ -1566,6 +1607,9 @@ static void window_unload(Window *window) {
   // custom fonts are automatically unloaded at exit - http://forums.getpebble.com/discussion/comment/35808/#Comment_35808
   layer_remove_from_parent(bitmap_layer_get_layer(bmp_charging_layer));
   bitmap_layer_destroy(bmp_charging_layer);
+  for (int i = 0; i < 3; i++) {
+    if (tray_layers[i]) { bitmap_layer_destroy(tray_layers[i]); tray_layers[i] = NULL; }
+  }
   gbitmap_destroy(image_charging_icon);
   gbitmap_destroy(image_hourvibe_icon);
   gbitmap_destroy(image_dnd_icon);

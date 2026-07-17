@@ -72,6 +72,15 @@ UTEST(chrgicon, dodges_right_battery_bar) {
   ASSERT_EQ(74,  chrg_icon_x_for(144, 1)); // basalt: docked at half+2
 }
 
+// Status tray under the clock (wide screens): icons pack from the right edge
+// (width-4), 20px wide at a 22px pitch; idx 0 is the rightmost icon.
+UTEST(statustray, packs_from_right_edge) {
+  ASSERT_EQ(176, status_tray_x(200, 0)); // rightmost: 176..196, 4px margin
+  ASSERT_EQ(154, status_tray_x(200, 1));
+  ASSERT_EQ(132, status_tray_x(200, 2));
+  ASSERT_EQ(120, status_tray_x(144, 0)); // pure function works narrow too
+}
+
 // Pure weather-glyph sizing: narrow screens stay compact; wide screens take
 // the 48px glyph whenever the band fits glyph + temperature (>= 64px).
 UTEST(weatherglyph, scales_with_band_and_width) {
