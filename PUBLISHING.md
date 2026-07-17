@@ -46,8 +46,11 @@ Rebble guides:
 **Keywords / tags:** calendar, weather, complications, date, week number,
 battery, moon phase, world time, minimal, localizable
 
-## Release notes — v0.0.6
+## Release notes — v0.0.7
 
+> • Status icons (charging, Do Not Disturb, hourly vibe) now sit in a tray
+>   under the clock on large screens, side by side — no more overlap with the
+>   battery bar in the status bar.
 > • Fix the phone-battery complication always showing empty on a real watch
 >   (0.0.5 regression).
 > • Bigger weather icon on large screens (Pebble Time 2 / Core Time 2): the

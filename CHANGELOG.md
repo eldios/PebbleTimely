@@ -7,6 +7,14 @@ text to paste into the **Release notes** field when uploading the `.pbw` to the
 the build, so the portal does not auto-fill it). The store **Description** lives
 in [`PUBLISHING.md`](PUBLISHING.md).
 
+## 0.0.7
+
+- Status icons (charging, Do Not Disturb, hourly vibration) move out of the
+  status bar into a tray under the clock on large screens: they no longer
+  overlap the battery bar, and multiple icons now show side by side instead
+  of a single priority-picked one. Small screens keep the status-bar icon,
+  now repositioned clear of the battery bar.
+
 ## 0.0.6
 
 - Fix the phone-battery complication always showing empty on a real watch:
