@@ -42,9 +42,14 @@ var LANGS = {
     ['Gennaio', 'Febbraio', 'Marzo', 'Aprile', 'Maggio', 'Giugno', 'Luglio', 'Agosto', 'Settembre', 'Ottobre', 'Novembre', 'Dicembre'],
     ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'],
     ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato'],
-    ['Do', 'Lu', 'Ma', 'Me', 'Gi', 'Ve', 'Sa'], 'Connesso', 'Assente')
+    ['Do', 'Lu', 'Ma', 'Me', 'Gi', 'Ve', 'Sa'], 'Connesso', 'Assente'),
+  ES: langTable(
+    ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'],
+    ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+    ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'],
+    ['D', 'L', 'M', 'X', 'J', 'V', 'S'], 'Linked', 'NOLINK')
 };
-var LANG_OPTIONS = [['Follow system', 'system'], ['English', 'EN'], ['Italiano', 'IT'], ['Custom', 'custom']];
+var LANG_OPTIONS = [['Follow system', 'system'], ['English', 'EN'], ['Italiano', 'IT'], ['Español', 'ES'], ['Custom', 'custom']];
 
 function selOptions(options, val) {
   var s = '';
